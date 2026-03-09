@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"strings"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -65,26 +66,26 @@ func (s *OpenAIService) GenerateSummary(req SummaryRequest) (*SummaryResponse, e
 		content = req.Description
 	}
 
-	prompt := fmt.Sprintf(`请分析以下文章并生成：
-1. 一段2-3句话的摘要
-2. 3-5个关键要点
+	prompt := fmt.Sprintf(`请分析以下文章并生成摘要和关键要点。
 
 文章标题：%s
 文章内容：%s
 
-请以JSON格式返回，格式如下：
-{
-  "summary": "摘要内容",
-  "key_points": ["要点1", "要点2", "要点3"]
-}
+【重要】你必须严格按照以下JSON格式返回，不要添加任何其他内容、解释或markdown代码块标记：
 
-只返回JSON，不要有其他内容。`, req.Title, content)
+{"summary":"摘要内容（2-3句话）","key_points":["要点1","要点2","要点3"]}
+
+要求：
+1. summary: 一段2-3句话的简洁摘要
+2. key_points: 3-5个关键要点的字符串数组
+3. 直接返回JSON对象，不要用反引号json包裹
+4. 不要添加任何前后缀文字`, req.Title, content)
 
 	// 构建请求
 	openaiReq := map[string]interface{}{
 		"model": s.Model,
 		"messages": []map[string]string{
-			{"role": "system", "content": "你是一个专业的文章摘要助手。请用简洁的中文生成摘要和要点。"},
+			{"role": "system", "content": "你是一个专业的文章摘要助手。请用简洁的中文生成摘要和要点。你必须严格返回纯JSON格式，不要添加任何markdown标记或额外文字。"},
 			{"role": "user", "content": prompt},
 		},
 		"temperature": 0.3,
@@ -139,6 +140,29 @@ func (s *OpenAIService) GenerateSummary(req SummaryRequest) (*SummaryResponse, e
 	// 解析返回的 JSON
 	var result SummaryResponse
 	contentStr := openaiResp.Choices[0].Message.Content
+	
+	// 尝试去除可能的 markdown 代码块标记
+	contentStr = strings.TrimSpace(contentStr)
+	
+	// 处理 ```json ... ``` 格式
+	if strings.HasPrefix(contentStr, "```json") {
+		contentStr = strings.TrimPrefix(contentStr, "```json")
+	} else if strings.HasPrefix(contentStr, "```") {
+		contentStr = strings.TrimPrefix(contentStr, "```")
+	}
+	if strings.HasSuffix(contentStr, "```") {
+		contentStr = strings.TrimSuffix(contentStr, "```")
+	}
+	contentStr = strings.TrimSpace(contentStr)
+	
+	// 尝试提取 JSON 对象（处理可能的多余内容）
+	if idx := strings.Index(contentStr, "{"); idx > 0 {
+		contentStr = contentStr[idx:]
+	}
+	if idx := strings.LastIndex(contentStr, "}"); idx != -1 && idx < len(contentStr)-1 {
+		contentStr = contentStr[:idx+1]
+	}
+	
 	if err := json.Unmarshal([]byte(contentStr), &result); err != nil {
 		// 如果解析失败，尝试提取内容
 		result.Summary = contentStr

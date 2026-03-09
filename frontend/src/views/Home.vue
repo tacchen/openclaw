@@ -178,34 +178,35 @@
                 <div v-if="article.tags && article.tags.length > 0" class="article-tags">
                   <span v-for="tag in article.tags" :key="tag.id" class="article-tag">{{ tag.name }}</span>
                 </div>
+                <!-- AI Summary Preview -->
+                <div v-if="article.summary" class="article-summary-preview" @click.stop="article.showSummary = true">
+                  <div class="summary-preview-divider"></div>
+                  <span class="summary-preview-icon">🤖</span>
+                  <span class="summary-preview-text">AI概览：{{ article.summary.slice(0, 50) }}{{ article.summary.length > 50 ? '...' : '' }}</span>
+                  <div v-if="getKeyPoints(article).length" class="summary-keypoints">
+                    <span v-for="(point, idx) in getKeyPoints(article).slice(0, 3)" :key="idx" class="keypoint-tag">{{ point }}</span>
+                  </div>
+                </div>
               </div>
               <div class="article-actions">
                 <button class="btn btn-ghost btn-sm" @click="showTagArticle(article)" title="添加标签">🏷️</button>
                 <button class="btn btn-primary btn-sm" @click="generateSummary(article)" :disabled="article.summaryLoading">AI概览</button>
               </div>
-              <!-- AI Summary Modal -->
-              <div v-if="article.showSummary && article.summary" class="summary-modal-overlay" @click.self="article.showSummary = false">
-                <div class="summary-modal">
-                  <div class="summary-modal-header">
-                    <h3>AI 概览</h3>
-                    <button class="btn btn-ghost btn-sm" @click="article.showSummary = false">✕</button>
+              <!-- AI Summary Expand -->
+              <div v-if="article.showSummary" class="summary-expand">
+                <div v-if="article.summaryLoading" class="summary-loading">
+                  <span class="loading-spinner"></span>
+                  <span>正在生成 AI 概览...</span>
+                </div>
+                <div v-else-if="article.summary" class="summary-expand-content">
+                  <div class="summary-expand-header">
+                    <span>🤖 AI 概览</span>
+                    <a :href="article.link" target="_blank" rel="noopener" class="summary-link">查看原文 ↗</a>
                   </div>
-                  <div class="summary-modal-body">
-                    <div class="summary-original-link">
-                      <span class="label">原文链接</span>
-                      <a :href="article.link" target="_blank" rel="noopener">{{ article.title }}</a>
-                    </div>
-                    <div class="summary-content">
-                      <div class="summary-section">
-                        <div class="summary-section-title">摘要</div>
-                        <p class="summary-text">{{ article.summary }}</p>
-                      </div>
-                      <div v-if="article.keyPoints && article.keyPoints.length" class="summary-section">
-                        <div class="summary-section-title">关键要点</div>
-                        <ul class="summary-points">
-                          <li v-for="(point, idx) in article.keyPoints" :key="idx">{{ point }}</li>
-                        </ul>
-                      </div>
+                  <div class="summary-expand-body">
+                    <p class="summary-text">{{ article.summary }}</p>
+                    <div v-if="getKeyPoints(article).length" class="summary-keypoints-expand">
+                      <span v-for="(point, idx) in getKeyPoints(article).slice(0, 5)" :key="idx" class="keypoint-tag">{{ point }}</span>
                     </div>
                   </div>
                 </div>
@@ -534,6 +535,15 @@ async function openArticle(article) {
   }
 }
 
+function getKeyPoints(article) {
+  const points = article.keyPoints || article.key_points
+  if (Array.isArray(points)) return points
+  if (typeof points === 'string') {
+    try { return JSON.parse(points) } catch { return [] }
+  }
+  return []
+}
+
 async function generateSummary(article) {
   if (article.summary) {
     article.showSummary = !article.showSummary
@@ -667,6 +677,24 @@ onMounted(() => {
 .feed-manager-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 8px; margin-top: 4px; }
 .article-list-item.unread { border-left: 3px solid var(--primary); }
 .article-list-item.unread .article-list-title { font-weight: 600; }
+.article-summary-preview { margin-top: 8px; cursor: pointer; }
+.article-summary-preview:hover { opacity: 0.8; }
+.summary-preview-divider { height: 1px; background: var(--border); margin-bottom: 8px; }
+.summary-preview-icon { margin-right: 4px; }
+.summary-preview-text { font-size: 12px; color: #10b981; line-height: 1.4; }
+.summary-keypoints { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.keypoint-tag { font-size: 11px; color: #f97316; background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.3); padding: 2px 8px; border-radius: 4px; }
+.summary-expand { grid-column: 1 / -1; margin-top: 8px; background: var(--bg-secondary); border-radius: 8px; overflow: hidden; }
+.summary-loading { display: flex; align-items: center; gap: 8px; padding: 16px; color: var(--text-muted); }
+.loading-spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.summary-expand-content { padding: 12px 16px; }
+.summary-expand-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: 500; color: var(--primary); }
+.summary-link { font-size: 12px; color: var(--text-muted); text-decoration: none; }
+.summary-link:hover { color: var(--primary); }
+.summary-expand-body { }
+.summary-expand-body .summary-text { font-size: 13px; line-height: 1.6; color: var(--text-primary); margin: 0 0 8px 0; }
+.summary-keypoints-expand { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .toggle-switch { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
 .toggle-switch input { width: 16px; height: 16px; cursor: pointer; }
 .toggle-label { color: var(--text-secondary); }
