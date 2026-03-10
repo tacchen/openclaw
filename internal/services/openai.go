@@ -76,10 +76,17 @@ func (s *OpenAIService) GenerateSummary(req SummaryRequest) (*SummaryResponse, e
 {"summary":"摘要内容（2-3句话）","key_points":["要点1","要点2","要点3"]}
 
 要求：
-1. summary: 一段2-3句话的简洁摘要
-2. key_points: 3-5个关键要点的字符串数组
+1. summary（摘要）：
+   - 仅3-5句话，总字数≤150字
+   - 聚焦核心结论+关键逻辑/数据，避免背景铺陈
+   - 使用客观陈述句，禁用「本文介绍了」「总的来说」等元描述
+2. key_points（关键要点）：
+   - 3-5条，每条为独立字符串，组成JSON数组
+   - 每条≤15字，采用「动词+核心信息」结构（如：「下调利率25BP」「上线人脸验证功能」）
+   - 按重要性降序排列，去重、去修饰、去举例
 3. 直接返回JSON对象，不要用反引号json包裹
-4. 不要添加任何前后缀文字`, req.Title, content)
+
+示例：{"summary":"美联储宣布下调基准利率25个基点。这是自2020年以来的首次降息，旨在应对通胀放缓。市场预期年内还将有1-2次降息。","key_points":["下调利率25BP","2020年首次降息","预期继续降息"]}`, req.Title, content)
 
 	// 构建请求
 	openaiReq := map[string]interface{}{
