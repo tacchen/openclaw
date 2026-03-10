@@ -119,7 +119,7 @@ func (r *ArticleRepository) Create(article *models.Article) error {
 }
 
 // FindByUserID 支持按 feed_id, tag_id, category, is_read 筛选
-func (r *ArticleRepository) FindByUserID(userID uint, page, pageSize int, feedID uint, tagID uint, category string, isRead *bool) ([]models.Article, int64, error) {
+func (r *ArticleRepository) FindByUserID(userID uint, page, pageSize int, feedID uint, tagID uint, category string, isRead *bool, hasSummary *bool) ([]models.Article, int64, error) {
 	var articles []models.Article
 	var total int64
 
@@ -145,6 +145,15 @@ func (r *ArticleRepository) FindByUserID(userID uint, page, pageSize int, feedID
 	// Filter by is_read
 	if isRead != nil {
 		query = query.Where("articles.is_read = ?", *isRead)
+	}
+
+	// Filter by has_summary
+	if hasSummary != nil {
+		if *hasSummary {
+			query = query.Where("articles.summary != ?", "")
+		} else {
+			query = query.Where("articles.summary = ?", "")
+		}
 	}
 
 	if err := query.Count(&total).Error; err != nil {

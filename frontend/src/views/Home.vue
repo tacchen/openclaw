@@ -118,17 +118,17 @@
       <!-- Header -->
       <header class="header">
         <div class="header-left">
-          <h1 class="header-title">{{ currentTitle }} <span class="header-count">({{ showUnreadOnly ? unreadCount.total : total }})</span></h1>
+          <h1 class="header-title">{{ currentTitle }} <span class="header-count">({{ readFilter === "unread" ? unreadCount.total : (readFilter === "analyzed" ? analyzedCount : total) }})</span></h1>
         </div>
         <div class="header-right">
-          <label class="toggle-switch">
-            <input type="checkbox" v-model="showUnreadOnly" @change="fetchArticles" />
-            <span class="toggle-label">只看未读</span>
-          </label>
-          <button class="btn btn-secondary" @click="markAllAsRead(selectedFeedId, selectedCategory)" 
-                  :disabled="unreadCount.total === 0" title="全部标记已读">
-            ✓ 全部已读
-          </button>
+          <button v-if="readFilter !== 'read'" class="btn btn-ghost btn-compact" @click="markAllAsRead(selectedFeedId, selectedCategory)" 
+                  :disabled="unreadCount.total === 0" title="全部标记已读">✓ 全部已读</button>
+          <select v-model="readFilter" @change="fetchArticles" class="form-input read-filter-select">
+            <option value="">全部</option>
+            <option value="unread">未读</option>
+            <option value="read">已读</option>
+            <option value="analyzed">已分析</option>
+          </select>
           <div class="search-bar">
             <span class="search-icon">🔍</span>
             <input 
@@ -376,7 +376,8 @@ const selectedCategory = ref('')
 const page = ref(1)
 const perPage = ref(20)
 const total = ref(0)
-const showUnreadOnly = ref(false)
+const readFilter = ref('')
+const analyzedCount = ref(0)
 const unreadCount = ref({ total: 0, by_feed: {}, by_category: {} })
 const userEmail = ref(localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : '')
 
@@ -487,7 +488,9 @@ async function fetchArticles() {
     if (selectedFeedId.value > 0) params.feed_id = selectedFeedId.value
     if (selectedTagId.value > 0) params.tag_id = selectedTagId.value
     if (selectedCategory.value) params.category = selectedCategory.value
-    if (showUnreadOnly.value) params.is_read = 'false'
+    if (readFilter.value === 'unread') params.is_read = 'false'
+    if (readFilter.value === 'read') params.is_read = 'true'
+    if (readFilter.value === 'analyzed') params.has_summary = 'true'
     const res = await api.get('/articles', { params })
     articles.value = res.data.articles || []
     total.value = res.data.total || 0
@@ -628,6 +631,7 @@ onMounted(() => {
 .article-tag { font-size: 11px; padding: 2px 8px; background: var(--bg-tertiary); color: var(--text-secondary); border-radius: var(--radius-full); }
 .article-actions { display: flex; flex-direction: column; gap: 4px; padding-left: 12px; border-left: 1px solid var(--border); }
 .btn-sm { padding: 4px 8px; font-size: 12px; }
+.btn-compact { padding: 4px 10px; font-size: 12px; height: 28px; line-height: 1; display: inline-flex; align-items: center; white-space: nowrap; }
 .category-filter { margin-bottom: 16px; }
 .category-filter select { font-size: 13px; }
 .user-section { padding: 12px 16px; border-top: 1px solid var(--border); position: relative; }
@@ -671,6 +675,8 @@ onMounted(() => {
 .summary-loading { display: flex; align-items: center; gap: 8px; padding: 8px 0; color: var(--text-muted); }
 .loading-spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.read-filter-select { padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); font-size: 13px; cursor: pointer; }
+.read-filter-select:focus { outline: none; border-color: var(--primary); }
 .toggle-switch { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
 .toggle-switch input { width: 16px; height: 16px; cursor: pointer; }
 .toggle-label { color: var(--text-secondary); }

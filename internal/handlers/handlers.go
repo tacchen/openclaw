@@ -235,6 +235,7 @@ func GetArticles(articleRepo *repository.ArticleRepository) gin.HandlerFunc {
 		tagIDStr := c.Query("tag_id")
 		category := c.Query("category")
 		isReadStr := c.Query("is_read")
+		hasSummaryStr := c.Query("has_summary")
 
 		var feedID uint
 		if feedIDStr != "" {
@@ -258,7 +259,13 @@ func GetArticles(articleRepo *repository.ArticleRepository) gin.HandlerFunc {
 			isRead = &val
 		}
 
-		articles, total, err := articleRepo.FindByUserID(userID, page, pageSize, feedID, tagID, category, isRead)
+		var hasSummary *bool
+		if hasSummaryStr != "" {
+			val := hasSummaryStr == "true"
+			hasSummary = &val
+		}
+
+		articles, total, err := articleRepo.FindByUserID(userID, page, pageSize, feedID, tagID, category, isRead, hasSummary)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

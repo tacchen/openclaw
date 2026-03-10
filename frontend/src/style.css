@@ -377,6 +377,12 @@ body {
   border-radius: var(--radius-md);
 }
 
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+  line-height: 1;
+}
+
 /* Content Area */
 .content {
   flex: 1;
