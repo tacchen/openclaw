@@ -7,6 +7,8 @@ import (
 	"rss-reader/internal/repository"
 	"rss-reader/internal/services"
 	"strconv"
+
+	"rss-reader/internal/utils"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -143,6 +145,7 @@ func CreateFeed(feedRepo *repository.FeedRepository, rssService *services.RSSSer
 			URL:      req.URL,
 			Title:    req.Title,
 			Category: req.Category,
+			IconURL:  utils.GetFaviconURL(req.URL),
 			UserID:   userID,
 		}
 

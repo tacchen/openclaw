@@ -46,7 +46,7 @@
               :class="{ active: selectedFeedId === feed.id && selectedTagId === 0 }"
               @click="selectFeed(feed.id)"
             >
-              <div class="feed-icon">{{ getFeedIcon(feed.category) }}</div>
+              <img v-if="feed.icon_url" :src="feed.icon_url" class="feed-icon-img" @error="$event.target.style.display='none'" /><div v-else class="feed-icon">{{ getFeedIcon(feed.category) }}</div>
               <div class="feed-info">
                 <div class="feed-name">{{ feed.title || feed.url }}</div>
                 <div class="feed-meta" v-if="feed.category">{{ feed.category }}</div>
@@ -190,7 +190,7 @@
               </div>
               <div class="article-actions">
                 <button class="btn btn-ghost btn-sm" @click="showTagArticle(article)" title="添加标签">🏷️</button>
-                <button class="btn btn-primary btn-sm" @click="generateSummary(article)" :disabled="article.summaryLoading">AI概览</button>
+                <button class="btn btn-primary btn-sm" @click="generateSummary(article)" :disabled="article.summaryLoading">{{ article.summaryLoading ? "生成中..." : "AI概览" }}</button>
               </div>
 
             </div>
@@ -321,7 +321,7 @@
           <div v-else class="feed-manager-list">
             <div v-for="feed in feeds" :key="feed.id" class="feed-manager-item">
               <div class="feed-manager-info">
-                <div class="feed-manager-icon">{{ getFeedIcon(feed.category) }}</div>
+                <img v-if="feed.icon_url" :src="feed.icon_url" class="feed-icon-img" @error="$event.target.style.display='none'" /><div v-else class="feed-manager-icon">{{ getFeedIcon(feed.category) }}</div>
                 <div class="feed-manager-details">
                   <div class="feed-manager-title">{{ feed.title || feed.url }}</div>
                   <div class="feed-manager-meta">

@@ -18,6 +18,7 @@ type Feed struct {
 	URL       string     `gorm:"not null;uniqueIndex:idx_user_feed" json:"url"`
 	Title     string     `json:"title"`
 	Category  string     `json:"category"`
+	IconURL   string     `json:"icon_url,omitempty"`
 	UserID    uint       `gorm:"uniqueIndex:idx_user_feed" json:"user_id"`
 	LastFetch *time.Time `json:"last_fetch,omitempty"`
 	Articles  []Article `gorm:"foreignKey:FeedID" json:"articles,omitempty"`
