@@ -319,8 +319,18 @@
             暂无订阅源
           </div>
           <div v-else class="feed-manager-list">
-            <div v-for="feed in feeds" :key="feed.id" class="feed-manager-item">
-              <div class="feed-manager-info">
+            <div class="feed-manager-header">
+              <label class="feed-checkbox">
+                <input type="checkbox" @change="toggleSelectAllFeeds" :checked="isAllFeedsSelected" />
+                <span>全选</span>
+              </label>
+              <span class="feed-count-text">已选 {{ selectedFeedIds.length }} / {{ feeds.length }}</span>
+            </div>
+            <div v-for="feed in feeds" :key="feed.id" class="feed-manager-item" :class="{ selected: selectedFeedIds.includes(feed.id) }">
+              <label class="feed-checkbox">
+                <input type="checkbox" :value="feed.id" v-model="selectedFeedIds" />
+              </label>
+              <div class="feed-manager-info" @click="toggleFeedSelection(feed.id)">
                 <img v-if="feed.icon_url" :src="feed.icon_url" class="feed-icon-img" @error="$event.target.style.display='none'" /><div v-else class="feed-manager-icon">{{ getFeedIcon(feed.category) }}</div>
                 <div class="feed-manager-details">
                   <div class="feed-manager-title">{{ feed.title || feed.url }}</div>
@@ -330,17 +340,48 @@
                   </div>
                 </div>
               </div>
-              <button class="btn btn-ghost btn-sm" @click="deleteFeed(feed.id)" title="删除">🗑️</button>
+              <div class="feed-manager-actions">
+                <button class="btn btn-ghost btn-sm" @click="editFeed(feed)" title="编辑">✏️</button>
+                <button class="btn btn-ghost btn-sm" @click="deleteFeed(feed.id)" title="删除">🗑️</button>
+              </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
+          <button class="btn btn-secondary" @click="$refs.opmlInput.click()">📥 导入 OPML</button>
+          <button class="btn btn-secondary" @click="exportFeeds" :disabled="selectedFeedIds.length === 0">📤 导出 OPML ({{ selectedFeedIds.length }})</button>
+          <input ref="opmlInput" type="file" accept=".opml,.xml" @change="importFeeds" style="display: none" />
           <button class="btn btn-secondary" @click="showFeedManager = false">关闭</button>
         </div>
       </div>
     </div>
 
-    <div v-if="showUserMenu" class="menu-backdrop" @click="showUserMenu = false"></div>
+    <!-- 编辑订阅源弹窗 -->
+    <div v-if="showEditFeed" class="modal-overlay" @click.self="showEditFeed = false">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">编辑订阅源</h3>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">标题</label>
+            <input v-model="editingFeed.title" class="form-input" placeholder="自定义标题" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">分类</label>
+            <input v-model="editingFeed.category" class="form-input" placeholder="如：科技、新闻" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="showEditFeed = false">取消</button>
+          <button class="btn btn-primary" @click="updateFeed" :disabled="editFeedLoading">
+            {{ editFeedLoading ? '保存中...' : '保存' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+
   </div>
 </template>
 
@@ -360,11 +401,15 @@ const showAddFeed = ref(false)
 const showAddTag = ref(false)
 const showProfile = ref(false)
 const showFeedManager = ref(false)
+const showEditFeed = ref(false)
 const showUserMenu = ref(false)
 const showTagArticleModal = ref(false)
 const newFeed = ref({ url: '', title: '', category: '' })
+const editingFeed = ref({ id: 0, title: '', category: '' })
+const selectedFeedIds = ref([])
 const feedError = ref('')
 const feedLoading = ref(false)
+const editFeedLoading = ref(false)
 const newTagName = ref('')
 const selectedArticle = ref(null)
 const selectedTagForArticle = ref('')
@@ -479,6 +524,101 @@ async function deleteFeed(id) {
     fetchFeeds()
     if (selectedFeedId.value === id) { selectedFeedId.value = 0; fetchArticles() }
   } catch (e) { console.error(e) }
+}
+
+
+function editFeed(feed) {
+  editingFeed.value = { id: feed.id, title: feed.title || '', category: feed.category || '' }
+  showEditFeed.value = true
+}
+
+async function updateFeed() {
+  editFeedLoading.value = true
+  try {
+    await api.put('/feeds/' + editingFeed.value.id, {
+      title: editingFeed.value.title,
+      category: editingFeed.value.category
+    })
+    showEditFeed.value = false
+    fetchFeeds()
+  } catch (e) {
+    console.error(e)
+    alert('保存失败')
+  } finally {
+    editFeedLoading.value = false
+  }
+}
+
+async function importFeeds(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  const text = await file.text()
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(text, 'text/xml')
+  const outlines = doc.querySelectorAll('outline[xmlUrl]')
+  
+  let imported = 0
+  let failed = 0
+  
+  for (const outline of outlines) {
+    const url = outline.getAttribute('xmlUrl')
+    const title = outline.getAttribute('title') || outline.getAttribute('text') || ''
+    const category = outline.getAttribute('category') || ''
+    
+    try {
+      await api.post('/feeds', { url, title, category })
+      imported++
+    } catch (e) {
+      failed++
+      console.error('Failed to import:', url, e)
+    }
+  }
+  
+  event.target.value = ''
+  fetchFeeds()
+  alert(`导入完成：成功 ${imported} 个，失败 ${failed} 个`)
+}
+
+const isAllFeedsSelected = computed(() => selectedFeedIds.value.length === feeds.value.length && feeds.value.length > 0)
+
+function toggleSelectAllFeeds(e) {
+  if (e.target.checked) {
+    selectedFeedIds.value = feeds.value.map(f => f.id)
+  } else {
+    selectedFeedIds.value = []
+  }
+}
+
+function toggleFeedSelection(id) {
+  const idx = selectedFeedIds.value.indexOf(id)
+  if (idx === -1) {
+    selectedFeedIds.value.push(id)
+  } else {
+    selectedFeedIds.value.splice(idx, 1)
+  }
+}
+
+function exportFeeds() {
+  let opml = '<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n  <head>\n    <title>RSS Feeds Export</title>\n  </head>\n  <body>\n'
+  feeds.value.filter(f => selectedFeedIds.value.includes(f.id)).forEach(feed => {
+    const title = feed.title || feed.url
+    const category = feed.category || 'Uncategorized'
+    opml += `    <outline type="rss" text="${escapeXml(title)}" title="${escapeXml(title)}" xmlUrl="${escapeXml(feed.url)}" category="${escapeXml(category)}"/>\n`
+  })
+  opml += '  </body>\n</opml>'
+  const blob = new Blob([opml], { type: 'application/xml' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'rss-feeds.opml'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function escapeXml(str) {
+  if (!str) return ''
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')
 }
 
 async function fetchArticles() {
@@ -685,12 +825,23 @@ onMounted(() => {
 .profile-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
 .profile-value { font-size: 16px; font-weight: 500; }
 .feed-manager-list { display: flex; flex-direction: column; gap: 8px; }
+.feed-manager-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+.feed-checkbox { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }
+.feed-checkbox input { width: 16px; height: 16px; cursor: pointer; }
+.feed-count-text { font-size: 13px; color: var(--text-muted); }
+.feed-manager-item.selected { background: var(--primary-light); }
+.feed-manager-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.feed-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.feed-checkbox input { width: 16px; height: 16px; cursor: pointer; }
+.feed-count-text { font-size: 12px; color: var(--text-muted); }
+.feed-manager-item.selected { background: var(--primary-light); }
 .feed-manager-item { display: flex; align-items: center; padding: 12px; background: var(--bg-secondary); border-radius: var(--radius-md); gap: 12px; }
 .feed-manager-info { flex: 1; display: flex; align-items: center; gap: 12px; cursor: pointer; min-width: 0; }
 .feed-manager-icon { font-size: 20px; flex-shrink: 0; }
 .feed-manager-details { flex: 1; min-width: 0; }
 .feed-manager-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .feed-manager-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 8px; margin-top: 4px; }
+.feed-manager-actions { display: flex; gap: 4px; }
 .article-list-item.unread { border-left: 3px solid var(--primary); }
 .article-list-item.unread .article-list-title { font-weight: 600; }
 .article-summary-preview { margin-top: 8px; cursor: pointer; }
