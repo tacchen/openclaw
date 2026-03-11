@@ -173,7 +173,7 @@
                   <span class="article-list-time">{{ formatDate(article.pub_date) }}</span>
                 </div>
                 <h3 class="article-list-title">{{ article.title }}</h3>
-                <p class="article-list-description">{{ article.description }}</p>
+                <p class="article-list-description" v-html="sanitizeHtml(article.description)"></p>
                 <!-- Article Tags -->
                 <div v-if="article.tags && article.tags.length > 0" class="article-tags">
                   <span v-for="tag in article.tags" :key="tag.id" class="article-tag">{{ tag.name }}</span>
@@ -618,6 +618,36 @@ function logout() {
   router.push('/login')
 }
 
+
+// 安全渲染 HTML，只允许无风险的标签
+function sanitizeHtml(html) {
+  if (!html) return ""
+  const allowedTags = ["a", "p", "br", "strong", "b", "em", "i", "u", "span", "div", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "blockquote", "code", "pre"]
+  const allowedAttrs = { a: ["href", "title"], span: ["class"], div: ["class"], p: ["class"] }
+  let result = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+  result = result.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+  result = result.replace(/\s*on\w+="[^"]*"/gi, "").replace(/\s*on\w+='[^']*'/gi, "")
+  result = result.replace(/javascript:/gi, "")
+  const temp = document.createElement("div")
+  temp.innerHTML = result
+  function cleanNode(node) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const tagName = node.tagName.toLowerCase()
+      if (!allowedTags.includes(tagName)) {
+        while (node.firstChild) node.parentNode.insertBefore(node.firstChild, node)
+        node.parentNode.removeChild(node)
+        return
+      }
+      const allowed = allowedAttrs[tagName] || []
+      Array.from(node.attributes).forEach(attr => {
+        if (!allowed.includes(attr.name)) node.removeAttribute(attr.name)
+      })
+    }
+    Array.from(node.childNodes).forEach(cleanNode)
+  }
+  Array.from(temp.childNodes).forEach(cleanNode)
+  return temp.innerHTML
+}
 onMounted(() => {
   fetchFeeds()
   fetchTags()
