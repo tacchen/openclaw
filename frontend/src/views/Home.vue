@@ -639,7 +639,7 @@ onMounted(() => {
 .user-info:hover { background: var(--bg-hover); }
 .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px; }
 .user-details { flex: 1; min-width: 0; }
-.user-email { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-email { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); }
 .user-arrow { font-size: 10px; color: var(--text-muted); transition: transform var(--transition-fast); }
 .user-arrow.rotated { transform: rotate(180deg); }
 .user-menu { position: absolute; bottom: 100%; left: 16px; right: 16px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); margin-bottom: 8px; overflow: hidden; }
