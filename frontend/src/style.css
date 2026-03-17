@@ -527,10 +527,6 @@ body {
   background: var(--bg-secondary);
 }
 
-.article-list-item.unread {
-  border-left: 3px solid var(--primary);
-}
-
 .article-list-content {
   flex: 1;
   min-width: 0;

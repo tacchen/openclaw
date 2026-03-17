@@ -208,7 +208,10 @@
                   <span class="article-list-source" v-if="article.feed">
                     {{ article.feed.title || article.feed.url }}
                   </span>
-                  <span class="article-list-time">{{ formatDate(article.pub_date) }}</span>
+                  <span class="article-list-time">
+                    {{ formatDate(article.pub_date) }}
+                    <span v-if="!article.is_read" class="unread-dot"></span>
+                  </span>
                 </div>
                 <h3 class="article-list-title">{{ article.title }}</h3>
                 <p class="article-list-description" v-html="sanitizeHtml(article.description)"></p>
@@ -923,8 +926,19 @@ onMounted(() => {
 .feed-manager-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .feed-manager-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 8px; margin-top: 4px; }
 .feed-manager-actions { display: flex; gap: 4px; }
-.article-list-item.unread { border-left: 3px solid var(--primary); }
 .article-list-item.unread .article-list-title { font-weight: 600; }
+
+/* 未读橙色圆点 */
+.unread-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #f97316;
+  border-radius: 50%;
+  margin-left: 6px;
+  vertical-align: middle;
+  margin-top: 2px;
+}
 .article-summary-preview { margin-top: 8px; cursor: pointer; }
 .article-summary-preview:hover { opacity: 0.8; }
 .summary-preview-divider { height: 1px; background: var(--border); margin-bottom: 8px; }
