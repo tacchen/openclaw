@@ -13,10 +13,17 @@
       </div>
       
       <div class="sidebar-content">
-        <button class="btn btn-primary" style="width: 100%; margin-bottom: 12px" @click="showAddFeed = true">
-          + 添加订阅源
+        <!-- Home Button -->
+        <button 
+          class="home-button"
+          :class="{ active: showRecommendations }"
+          @click="goHome"
+        >
+          <span class="home-icon">🏠</span>
+          <span class="home-text">首页</span>
         </button>
         
+
         <!-- Category Filter -->
         <div class="category-filter">
           <select v-model="selectedCategory" class="form-input" @change="onCategoryChange">
@@ -27,7 +34,10 @@
         
         <!-- Feeds Section -->
         <div class="sidebar-section">
-          <div class="sidebar-title">订阅源</div>
+          <div class="sidebar-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>订阅源</span>
+            <button class="btn-add-feed" @click="showAddFeed = true" title="添加订阅源">+</button>
+          </div>
           <ul class="feed-list">
             <li 
               class="feed-item" 
@@ -145,6 +155,34 @@
 
       <!-- Content -->
       <div class="content">
+        <!-- Recommendations View -->
+        <div v-if="showRecommendations" class="recommendations-view">
+          <h2 class="recommendations-title">推荐订阅源</h2>
+          <p class="recommendations-subtitle">发现优质内容源，开始你的阅读之旅</p>
+          
+          <div class="recommendations-grid">
+            <div v-for="rec in recommendedFeeds" :key="rec.url" class="recommendation-card">
+              <div class="recommendation-header">
+                <span class="recommendation-icon">{{ rec.icon }}</span>
+                <div class="recommendation-info">
+                  <h3 class="recommendation-name">{{ rec.name }}</h3>
+                  <span class="recommendation-category">{{ rec.category }}</span>
+                </div>
+              </div>
+              <p class="recommendation-desc">{{ rec.description }}</p>
+              <button 
+                class="btn btn-primary recommendation-btn" 
+                @click="addRecommendedFeed(rec)"
+                :disabled="rec.adding"
+              >
+                {{ rec.added ? '已添加 ✓' : (rec.adding ? '添加中...' : '+ 订阅') }}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Articles View (default) -->
+        <template v-else>
         <div v-if="loading" class="empty-state">
           <div class="empty-state-icon">⏳</div>
           <div class="empty-state-title">加载中...</div>
@@ -207,6 +245,7 @@
             </button>
           </div>
         </div>
+        </template>
       </div>
     </main>
 
@@ -422,6 +461,48 @@ const page = ref(1)
 const perPage = ref(20)
 const total = ref(0)
 const readFilter = ref('')
+const showRecommendations = ref(false)
+
+// Recommended feeds data
+const recommendedFeeds = ref([
+  { name: '36氪', url: 'https://36kr.com/feed', category: '科技', icon: '🚀', description: '专注全球互联网创业与投资的科技媒体', adding: false, added: false },
+  { name: '阮一峰的网络日志', url: 'https://www.ruanyifeng.com/blog/atom.xml', category: '博客', icon: '📝', description: '知名技术博主的个人博客', adding: false, added: false },
+  { name: 'V2EX', url: 'https://www.v2ex.com/index.xml', category: '社区', icon: '🌐', description: '创意工作者的社区', adding: false, added: false },
+  { name: '少数派', url: 'https://sspai.com/feed', category: '效率', icon: '📱', description: '高效工作与高品质生活', adding: false, added: false },
+  { name: '虎嗅', url: 'https://www.huxiu.com/rss/0.xml', category: '商业', icon: '🐯', description: '有视角的商业资讯', adding: false, added: false },
+  { name: 'Wired', url: 'https://www.wired.com/feed/rss', category: '科技', icon: '🔌', description: '科技如何改变文化、经济和政治', adding: false, added: false },
+  { name: 'TechCrunch', url: 'https://techcrunch.com/feed/', category: '科技', icon: '🚀', description: '科技创业与投资新闻', adding: false, added: false },
+  { name: 'BBC 中文网', url: 'https://feeds.bbci.co.uk/zhongwen/simp/rss.xml', category: '新闻', icon: '🌍', description: 'BBC 中文新闻', adding: false, added: false },
+  { name: 'MIT Technology Review', url: 'https://www.technologyreview.com/feed/', category: '科技', icon: '🔬', description: 'MIT 科技评论', adding: false, added: false },
+  { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', category: '科技', icon: '⚡', description: '深度科技新闻与分析', adding: false, added: false },
+  { name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', category: '科技', icon: '📱', description: '科技、科学与艺术', adding: false, added: false },
+  { name: 'Hacker News', url: 'https://hnrss.org/frontpage', category: '技术', icon: '🔥', description: '热门技术讨论', adding: false, added: false },
+])
+
+// Go to home/recommendations
+function goHome() {
+  showRecommendations.value = true
+  selectedFeedId.value = 0
+  selectedTagId.value = 0
+  selectedCategory.value = ''
+}
+
+// Add recommended feed
+async function addRecommendedFeed(rec) {
+  if (rec.added || rec.adding) return
+  rec.adding = true
+  try {
+    await api.post('/feeds', { url: rec.url, title: rec.name, category: rec.category })
+    rec.added = true
+    fetchFeeds()
+  } catch (e) {
+    console.error('Failed to add feed:', e)
+    alert('添加失败: ' + (e.response?.data?.error || '未知错误'))
+  } finally {
+    rec.adding = false
+  }
+}
+
 const analyzedCount = ref(0)
 const unreadCount = ref({ total: 0, by_feed: {}, by_category: {} })
 const userEmail = ref(localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : '')
@@ -700,9 +781,9 @@ async function fetchUnreadCountData() {
   try { unreadCount.value = (await getUnreadCount()).data } catch (e) { console.error(e) }
 }
 
-function selectFeed(id) { selectedFeedId.value = id; selectedTagId.value = 0; page.value = 1; fetchArticles() }
-function selectTag(id) { selectedTagId.value = id; selectedFeedId.value = 0; page.value = 1; fetchArticles() }
-function onCategoryChange() { selectedFeedId.value = 0; selectedTagId.value = 0; page.value = 1; fetchArticles() }
+function selectFeed(id) { selectedFeedId.value = id; selectedTagId.value = 0; page.value = 1; showRecommendations.value = false; fetchArticles() }
+function selectTag(id) { selectedTagId.value = id; selectedFeedId.value = 0; page.value = 1; showRecommendations.value = false; fetchArticles() }
+function onCategoryChange() { selectedFeedId.value = 0; selectedTagId.value = 0; page.value = 1; showRecommendations.value = false; fetchArticles() }
 function prevPage() { if (page.value > 1) { page.value--; fetchArticles() } }
 function nextPage() { if (page.value < totalPages.value) { page.value++; fetchArticles() } }
 
@@ -870,4 +951,144 @@ onMounted(() => {
 .summary-text { font-size: 13px; line-height: 1.5; color: var(--text-primary); margin-bottom: 8px; }
 .summary-points { margin: 0; padding-left: 20px; }
 .summary-points li { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+
+/* Home Button */
+.home-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: 12px;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.home-button:hover {
+  background: var(--bg-hover);
+}
+
+.home-button.active {
+  background: var(--primary);
+  color: white;
+}
+
+.home-icon {
+  font-size: 18px;
+}
+
+.home-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Recommendations View */
+.recommendations-view {
+  padding: 20px 0;
+}
+
+.recommendations-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.recommendations-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.recommendation-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: box-shadow var(--transition-normal), transform var(--transition-normal);
+}
+
+.recommendation-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.recommendation-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.recommendation-icon {
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.recommendation-info {
+  flex: 1;
+}
+
+.recommendation-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.recommendation-category {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.recommendation-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+  min-height: 40px;
+}
+
+.recommendation-btn {
+  width: 100%;
+}
+
+/* 添加订阅源按钮 - 简洁加号 */
+.btn-add-feed {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.btn-add-feed:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
 </style>

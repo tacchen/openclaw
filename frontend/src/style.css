@@ -843,3 +843,11 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
 }
+
+/* Article Description Expanded */
+.article-list-description.expanded {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  display: block;
+}
