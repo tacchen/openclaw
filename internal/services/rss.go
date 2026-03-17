@@ -1,7 +1,9 @@
 package services
 
 import (
+	"context"
 	"log"
+	"net/http"
 	"rss-reader/internal/models"
 	"rss-reader/internal/repository"
 	"time"
@@ -34,8 +36,16 @@ func (s *RSSService) FetchAllFeeds() {
 }
 
 func (s *RSSService) FetchAndSaveArticles(feed *models.Feed) error {
+	// Create custom HTTP client with User-Agent to avoid being blocked
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	
 	fp := gofeed.NewParser()
-	parsedFeed, err := fp.ParseURL(feed.URL)
+	fp.Client = client
+	fp.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+	
+	parsedFeed, err := fp.ParseURLWithContext(feed.URL, context.Background())
 	if err != nil {
 		log.Printf("Error parsing feed %s: %v", feed.URL, err)
 		return err

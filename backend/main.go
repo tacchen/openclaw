@@ -54,6 +54,13 @@ func main() {
 	})
 	c.Start()
 
+	// Fetch feeds immediately on startup
+	go func() {
+		time.Sleep(5 * time.Second) // Wait for DB to be ready
+		log.Println("Initial RSS feed fetch...")
+		rssService.FetchAllFeeds()
+	}()
+
 	// Setup Gin router
 	r := gin.Default()
 
