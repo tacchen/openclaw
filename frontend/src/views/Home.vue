@@ -477,8 +477,6 @@
     <!-- Auth Modal -->
     <AuthModal v-model="showAuthModal" @success="onAuthSuccess" />
     
-    <!-- Global click backdrop for dropdowns -->
-    <div v-if="showCategoryDropdown || showReadFilterDropdown" class="dropdown-backdrop" @click="closeAllDropdowns"></div>
   </div>
 </template>
 
@@ -657,7 +655,8 @@ const currentTitle = computed(() => {
     return feed ? (feed.title || feed.url) : '全部文章'
   }
   if (selectedCategories.value.length === 1) return '分类：' + selectedCategories.value[0]
-  if (selectedCategories.value.length > 1) return '分类：' + selectedCategories.value.slice(0, 2).join(', ') + (selectedCategories.value.length > 2 ? ' +' + (selectedCategories.value.length - 2) : '')
+  if (selectedCategories.value.length === 2) return '分类：' + selectedCategories.value.join(', ')
+  if (selectedCategories.value.length > 2) return '分类：' + selectedCategories.value.slice(0, 2).join(', ') + ' +' + (selectedCategories.value.length - 2)
   return '全部文章'
 })
 
@@ -1009,6 +1008,20 @@ onMounted(() => {
   fetchFeeds()
   fetchTags()
   fetchUnreadCountData()
+  
+  // 点击外部区域关闭下拉菜单
+  document.addEventListener('click', (e) => {
+    const target = e.target
+    const categoryDropdown = document.querySelector('.category-filter .dropdown-wrapper')
+    const readFilterDropdown = document.querySelector('.header-right .dropdown-wrapper')
+    
+    if (categoryDropdown && !categoryDropdown.contains(target)) {
+      showCategoryDropdown.value = false
+    }
+    if (readFilterDropdown && !readFilterDropdown.contains(target)) {
+      showReadFilterDropdown.value = false
+    }
+  })
 })
 </script>
 
@@ -1269,6 +1282,7 @@ onMounted(() => {
 /* Dropdown Styles */
 .dropdown-wrapper {
   position: relative;
+  z-index: 60;
 }
 .dropdown-trigger {
   display: flex;
@@ -1358,10 +1372,5 @@ onMounted(() => {
   height: 1px;
   background: var(--border);
   margin: 4px 0;
-}
-.dropdown-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
 }
 </style>
