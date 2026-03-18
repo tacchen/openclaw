@@ -234,6 +234,7 @@ func GetArticles(articleRepo *repository.ArticleRepository) gin.HandlerFunc {
 		feedIDStr := c.Query("feed_id")
 		tagIDStr := c.Query("tag_id")
 		category := c.Query("category")
+		categories := c.Query("categories") // 支持多选分类（逗号分隔）
 		isReadStr := c.Query("is_read")
 		hasSummaryStr := c.Query("has_summary")
 
@@ -265,7 +266,13 @@ func GetArticles(articleRepo *repository.ArticleRepository) gin.HandlerFunc {
 			hasSummary = &val
 		}
 
-		articles, total, err := articleRepo.FindByUserID(userID, page, pageSize, feedID, tagID, category, isRead, hasSummary)
+		// 如果有 categories 参数，优先使用它
+		filterCategory := category
+		if categories != "" {
+			filterCategory = categories // 传递逗号分隔的多个分类
+		}
+		
+		articles, total, err := articleRepo.FindByUserID(userID, page, pageSize, feedID, tagID, filterCategory, isRead, hasSummary)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -327,12 +334,19 @@ func MarkAllRead(articleRepo *repository.ArticleRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := c.GetUint("userID")
 		var req struct {
-			FeedID   uint   `json:"feed_id"`
-			Category string `json:"category"`
+			FeedID     uint   `json:"feed_id"`
+			Category   string `json:"category"`
+			Categories string `json:"categories"` // 支持多选分类（逗号分隔）
 		}
 		c.ShouldBindJSON(&req)
 
-		count, err := articleRepo.MarkAllAsRead(userID, req.FeedID, req.Category)
+		// 优先使用 categories 参数
+		filterCategory := req.Category
+		if req.Categories != "" {
+			filterCategory = req.Categories
+		}
+
+		count, err := articleRepo.MarkAllAsRead(userID, req.FeedID, filterCategory)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

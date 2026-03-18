@@ -24,12 +24,30 @@
         </button>
         
 
-        <!-- Category Filter -->
+        <!-- Category Filter - Multi-select Dropdown -->
         <div class="category-filter">
-          <select v-model="selectedCategory" class="form-input" @change="onCategoryChange">
-            <option value="">全部分类</option>
-            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-          </select>
+          <div class="dropdown-wrapper">
+            <button class="dropdown-trigger" type="button" @click.stop="showCategoryDropdown = !showCategoryDropdown">
+              <span>{{ categoryFilterLabel }}</span>
+              <span class="dropdown-arrow" :class="{ open: showCategoryDropdown }">▼</span>
+            </button>
+            <div v-show="showCategoryDropdown" class="dropdown-menu">
+              <div class="dropdown-item" @click="clearCategories">
+                <span class="dropdown-checkbox" :class="{ checked: selectedCategories.length === 0 }">✓</span>
+                <span>全部分类</span>
+              </div>
+              <div class="dropdown-divider"></div>
+              <div 
+                v-for="cat in categories" 
+                :key="cat" 
+                class="dropdown-item"
+                @click="toggleCategory(cat)"
+              >
+                <span class="dropdown-checkbox" :class="{ checked: selectedCategories.includes(cat) }">✓</span>
+                <span>{{ cat }}</span>
+              </div>
+            </div>
+          </div>
         </div>
         
         <!-- Feeds Section -->
@@ -140,14 +158,36 @@
           <h1 class="header-title">{{ currentTitle }} <span class="header-count">({{ readFilter === "unread" ? unreadCount.total : (readFilter === "analyzed" ? analyzedCount : total) }})</span></h1>
         </div>
         <div class="header-right">
-          <button v-if="readFilter !== 'read'" class="btn btn-ghost btn-compact" @click="markAllAsRead(selectedFeedId, selectedCategory)" 
+          <button v-if="readFilter !== 'read'" class="btn btn-ghost btn-compact" @click="markAllAsRead(selectedFeedId, selectedCategories)" 
                   :disabled="unreadCount.total === 0" title="全部标记已读">✓ 全部已读</button>
-          <select v-model="readFilter" @change="fetchArticles" class="form-input read-filter-select">
-            <option value="">全部</option>
-            <option value="unread">未读</option>
-            <option value="read">已读</option>
-            <option value="analyzed">已分析</option>
-          </select>
+          <div class="dropdown-wrapper">
+            <button class="dropdown-trigger dropdown-trigger-sm" type="button" @click.stop="showReadFilterDropdown = !showReadFilterDropdown">
+              <span>{{ readFilterLabel }}</span>
+              <span class="dropdown-arrow" :class="{ open: showReadFilterDropdown }">▼</span>
+            </button>
+            <div v-show="showReadFilterDropdown" class="dropdown-menu dropdown-menu-right">
+              <div 
+                class="dropdown-item" 
+                :class="{ active: readFilter === '' }"
+                @click="setReadFilter('')"
+              >全部</div>
+              <div 
+                class="dropdown-item" 
+                :class="{ active: readFilter === 'unread' }"
+                @click="setReadFilter('unread')"
+              >未读</div>
+              <div 
+                class="dropdown-item" 
+                :class="{ active: readFilter === 'read' }"
+                @click="setReadFilter('read')"
+              >已读</div>
+              <div 
+                class="dropdown-item" 
+                :class="{ active: readFilter === 'analyzed' }"
+                @click="setReadFilter('analyzed')"
+              >已分析</div>
+            </div>
+          </div>
           <div class="search-bar">
             <span class="search-icon">🔍</span>
             <input 
@@ -436,6 +476,9 @@
 
     <!-- Auth Modal -->
     <AuthModal v-model="showAuthModal" @success="onAuthSuccess" />
+    
+    <!-- Global click backdrop for dropdowns -->
+    <div v-if="showCategoryDropdown || showReadFilterDropdown" class="dropdown-backdrop" @click="closeAllDropdowns"></div>
   </div>
 </template>
 
@@ -474,7 +517,9 @@ const newTagForArticle = ref('')
 const searchQuery = ref('')
 const selectedFeedId = ref(0)
 const selectedTagId = ref(0)
-const selectedCategory = ref('')
+const selectedCategories = ref([])  // Multi-select categories
+const showCategoryDropdown = ref(false)
+const showReadFilterDropdown = ref(false)
 const page = ref(1)
 const perPage = ref(20)
 const total = ref(0)
@@ -504,7 +549,33 @@ function goHome() {
   showRecommendations.value = true
   selectedFeedId.value = 0
   selectedTagId.value = 0
-  selectedCategory.value = ''
+  selectedCategories.value = []
+}
+
+function closeAllDropdowns() {
+  showCategoryDropdown.value = false
+  showReadFilterDropdown.value = false
+}
+
+function clearCategories() {
+  selectedCategories.value = []
+  onCategoryChange()
+}
+
+function toggleCategory(cat) {
+  const idx = selectedCategories.value.indexOf(cat)
+  if (idx === -1) {
+    selectedCategories.value.push(cat)
+  } else {
+    selectedCategories.value.splice(idx, 1)
+  }
+  onCategoryChange()
+}
+
+function setReadFilter(value) {
+  readFilter.value = value
+  showReadFilterDropdown.value = false
+  fetchArticles()
 }
 
 // Add recommended feed
@@ -554,9 +625,24 @@ const categories = computed(() => {
   return Array.from(cats).sort()
 })
 
+const categoryFilterLabel = computed(() => {
+  if (selectedCategories.value.length === 0) return '全部分类'
+  if (selectedCategories.value.length === 1) return selectedCategories.value[0]
+  // 显示前2个分类名称，超过则显示 "+N"
+  const firstTwo = selectedCategories.value.slice(0, 2).join(', ')
+  const remaining = selectedCategories.value.length - 2
+  if (remaining > 0) return `${firstTwo} +${remaining}`
+  return firstTwo
+})
+
+const readFilterLabel = computed(() => {
+  const labels = { '': '全部', 'unread': '未读', 'read': '已读', 'analyzed': '已分析' }
+  return labels[readFilter.value] || '全部'
+})
+
 const filteredFeeds = computed(() => {
-  if (!selectedCategory.value) return feeds.value
-  return feeds.value.filter(f => f.category === selectedCategory.value)
+  if (selectedCategories.value.length === 0) return feeds.value
+  return feeds.value.filter(f => selectedCategories.value.includes(f.category))
 })
 
 const totalPages = computed(() => Math.ceil(total.value / perPage.value))
@@ -570,7 +656,8 @@ const currentTitle = computed(() => {
     const feed = feeds.value.find(f => f.id === selectedFeedId.value)
     return feed ? (feed.title || feed.url) : '全部文章'
   }
-  if (selectedCategory.value) return '分类：' + selectedCategory.value
+  if (selectedCategories.value.length === 1) return '分类：' + selectedCategories.value[0]
+  if (selectedCategories.value.length > 1) return '分类：' + selectedCategories.value.slice(0, 2).join(', ') + (selectedCategories.value.length > 2 ? ' +' + (selectedCategories.value.length - 2) : '')
   return '全部文章'
 })
 
@@ -749,7 +836,7 @@ async function fetchArticles() {
     const params = { page: page.value, page_size: perPage.value }
     if (selectedFeedId.value > 0) params.feed_id = selectedFeedId.value
     if (selectedTagId.value > 0) params.tag_id = selectedTagId.value
-    if (selectedCategory.value) params.category = selectedCategory.value
+    if (selectedCategories.value.length > 0) params.categories = selectedCategories.value.join(',')
     if (readFilter.value === 'unread') params.is_read = 'false'
     if (readFilter.value === 'read') params.is_read = 'true'
     if (readFilter.value === 'analyzed') params.has_summary = 'true'
@@ -810,7 +897,8 @@ async function generateSummary(article) {
   }
 }
 
-async function markAllAsRead(feedId, category) {
+async function markAllAsRead(feedId, categories) {
+  const category = Array.isArray(categories) ? categories.join(',') : categories
   try {
     await markAllRead(feedId, category)
     fetchArticles()
@@ -1176,5 +1264,104 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
+}
+
+/* Dropdown Styles */
+.dropdown-wrapper {
+  position: relative;
+}
+.dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.dropdown-trigger:hover {
+  border-color: var(--primary);
+  background: var(--bg-hover);
+}
+.dropdown-trigger-sm {
+  padding: 6px 10px;
+  width: auto;
+  min-width: 80px;
+}
+.dropdown-arrow {
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 150px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 100;
+  padding: 4px 0;
+}
+.dropdown-menu-right {
+  left: auto;
+  right: 0;
+}
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.dropdown-item:hover {
+  background: var(--bg-hover);
+}
+.dropdown-item.active {
+  color: var(--primary);
+  font-weight: 500;
+}
+.dropdown-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: transparent;
+  transition: all 0.15s;
+}
+.dropdown-checkbox.checked {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+.dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+.dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
 }
 </style>

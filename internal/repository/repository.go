@@ -2,6 +2,7 @@ package repository
 
 import (
 	"rss-reader/internal/models"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -136,10 +137,11 @@ func (r *ArticleRepository) FindByUserID(userID uint, page, pageSize int, feedID
 			Where("article_tags.tag_id = ?", tagID)
 	}
 
-	// Filter by category
+	// Filter by category (支持多选，逗号分隔)
 	if category != "" {
+		categories := strings.Split(category, ",")
 		query = query.Joins("JOIN feeds ON feeds.id = articles.feed_id").
-			Where("feeds.category = ?", category)
+			Where("feeds.category IN ?", categories)
 	}
 
 	// Filter by is_read
@@ -224,9 +226,11 @@ func (r *ArticleRepository) MarkAllAsRead(userID uint, feedID uint, category str
 		query = query.Where("feed_id = ?", feedID)
 	}
 
+	// 支持多选分类（逗号分隔）
 	if category != "" {
+		categories := strings.Split(category, ",")
 		query = query.Joins("JOIN feeds ON feeds.id = articles.feed_id").
-			Where("feeds.category = ?", category)
+			Where("feeds.category IN ?", categories)
 	}
 
 	result := query.Update("is_read", true)
