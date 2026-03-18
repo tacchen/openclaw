@@ -607,10 +607,8 @@ async function doAddFeed(rec) {
 function onAuthSuccess() {
   showAuthModal.value = false
   userEmail.value = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : ''
-  if (pendingAction.value) {
-    pendingAction.value()
-    pendingAction.value = null
-  }
+  // 登录成功后刷新页面以获取用户数据
+  window.location.reload()
 }
 
 const analyzedCount = ref(0)
@@ -909,9 +907,44 @@ async function fetchUnreadCountData() {
   try { unreadCount.value = (await getUnreadCount()).data } catch (e) { console.error(e) }
 }
 
-function selectFeed(id) { selectedFeedId.value = id; selectedTagId.value = 0; page.value = 1; showRecommendations.value = false; fetchArticles() }
-function selectTag(id) { selectedTagId.value = id; selectedFeedId.value = 0; page.value = 1; showRecommendations.value = false; fetchArticles() }
-function onCategoryChange() { selectedFeedId.value = 0; selectedTagId.value = 0; page.value = 1; showRecommendations.value = false; fetchArticles() }
+function selectFeed(id) {
+  // 未登录时弹出登录窗口
+  if (!authStore.isLoggedIn) {
+    showAuthModal.value = true
+    return
+  }
+  selectedFeedId.value = id
+  selectedTagId.value = 0
+  page.value = 1
+  showRecommendations.value = false
+  fetchArticles()
+}
+function selectTag(id) {
+  // 未登录时弹出登录窗口
+  if (!authStore.isLoggedIn) {
+    showAuthModal.value = true
+    return
+  }
+  selectedTagId.value = id
+  selectedFeedId.value = 0
+  page.value = 1
+  showRecommendations.value = false
+  fetchArticles()
+}
+function onCategoryChange() {
+  // 未登录时弹出登录窗口
+  if (!authStore.isLoggedIn && selectedCategories.value.length > 0) {
+    showAuthModal.value = true
+    return
+  }
+  selectedFeedId.value = 0
+  selectedTagId.value = 0
+  page.value = 1
+  showRecommendations.value = false
+  if (authStore.isLoggedIn) {
+    fetchArticles()
+  }
+}
 function prevPage() { if (page.value > 1) { page.value--; fetchArticles() } }
 function nextPage() { if (page.value < totalPages.value) { page.value++; fetchArticles() } }
 
@@ -964,7 +997,8 @@ async function createAndAddTag() {
 function logout() {
   authStore.logout()
   showUserMenu.value = false
-  // 留在首页，不跳转
+  // 退出登录后刷新页面
+  window.location.reload()
 }
 
 
@@ -1001,13 +1035,14 @@ onMounted(() => {
   // 根据登录状态决定初始视图
   if (!authStore.isLoggedIn) {
     showRecommendations.value = true  // 未登录显示推荐页
+    // 未登录不请求需要认证的接口
   } else {
     showRecommendations.value = false  // 已登录显示全部文章
     fetchArticles()
+    fetchFeeds()
+    fetchTags()
+    fetchUnreadCountData()
   }
-  fetchFeeds()
-  fetchTags()
-  fetchUnreadCountData()
   
   // 点击外部区域关闭下拉菜单
   document.addEventListener('click', (e) => {
