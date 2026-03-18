@@ -94,30 +94,39 @@
       
       <!-- User Section -->
       <div class="user-section">
-        <div class="user-info" @click="showUserMenu = !showUserMenu">
-          <div class="user-avatar">{{ userEmail?.charAt(0).toUpperCase() }}</div>
-          <div class="user-details">
-            <div class="user-email">{{ userEmail }}</div>
-          </div>
-          <span class="user-arrow" :class="{ rotated: showUserMenu }">▼</span>
-        </div>
+        <!-- 未登录：显示登录入口 -->
+        <button v-if="!authStore.isLoggedIn" class="login-link" @click="showAuthModal = true">
+          <span class="login-icon">🔐</span>
+          <span class="login-text">登录</span>
+        </button>
         
-        <!-- User Menu Dropdown -->
-        <div v-if="showUserMenu" class="user-menu">
-          <div class="menu-item" @click="showProfile = true; showUserMenu = false">
-            <span>👤</span>
-            <span>个人信息</span>
+        <!-- 已登录：显示用户信息 -->
+        <template v-else>
+          <div class="user-info" @click="showUserMenu = !showUserMenu">
+            <div class="user-avatar">{{ userEmail?.charAt(0).toUpperCase() }}</div>
+            <div class="user-details">
+              <div class="user-email">{{ userEmail }}</div>
+            </div>
+            <span class="user-arrow" :class="{ rotated: showUserMenu }">▼</span>
           </div>
-          <div class="menu-item" @click="showFeedManager = true; showUserMenu = false">
-            <span>📡</span>
-            <span>订阅源管理</span>
+          
+          <!-- User Menu Dropdown -->
+          <div v-if="showUserMenu" class="user-menu">
+            <div class="menu-item" @click="showProfile = true; showUserMenu = false">
+              <span>👤</span>
+              <span>个人信息</span>
+            </div>
+            <div class="menu-item" @click="showFeedManager = true; showUserMenu = false">
+              <span>📡</span>
+              <span>订阅源管理</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item menu-item-danger" @click="logout">
+              <span>🚪</span>
+              <span>退出登录</span>
+            </div>
           </div>
-          <div class="menu-divider"></div>
-          <div class="menu-item menu-item-danger" @click="logout">
-            <span>🚪</span>
-            <span>退出登录</span>
-          </div>
-        </div>
+        </template>
       </div>
     </aside>
     <!-- Resizer -->
@@ -424,15 +433,21 @@
     </div>
 
 
+
+    <!-- Auth Modal -->
+    <AuthModal v-model="showAuthModal" @success="onAuthSuccess" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '../stores/auth'
+import AuthModal from '../components/AuthModal.vue'
 import { useRouter } from 'vue-router'
 import api, { markArticleRead, markAllRead, getUnreadCount, generateSummary as apiGenerateSummary } from '../api'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const theme = ref(localStorage.getItem('theme') || 'light')
 const sidebarWidth = ref(260)
 const feeds = ref([])
@@ -465,6 +480,8 @@ const perPage = ref(20)
 const total = ref(0)
 const readFilter = ref('')
 const showRecommendations = ref(false)
+const showAuthModal = ref(false)
+const pendingAction = ref(null)
 
 // Recommended feeds data
 const recommendedFeeds = ref([
@@ -493,6 +510,18 @@ function goHome() {
 // Add recommended feed
 async function addRecommendedFeed(rec) {
   if (rec.added || rec.adding) return
+  
+  // 检查登录状态
+  if (!authStore.isLoggedIn) {
+    pendingAction.value = () => doAddFeed(rec)
+    showAuthModal.value = true
+    return
+  }
+  
+  doAddFeed(rec)
+}
+
+async function doAddFeed(rec) {
   rec.adding = true
   try {
     await api.post('/feeds', { url: rec.url, title: rec.name, category: rec.category })
@@ -503,6 +532,15 @@ async function addRecommendedFeed(rec) {
     alert('添加失败: ' + (e.response?.data?.error || '未知错误'))
   } finally {
     rec.adding = false
+  }
+}
+
+function onAuthSuccess() {
+  showAuthModal.value = false
+  userEmail.value = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : ''
+  if (pendingAction.value) {
+    pendingAction.value()
+    pendingAction.value = null
   }
 }
 
@@ -837,9 +875,9 @@ async function createAndAddTag() {
 }
 
 function logout() {
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
-  router.push('/login')
+  authStore.logout()
+  showUserMenu.value = false
+  // 留在首页，不跳转
 }
 
 
@@ -873,9 +911,15 @@ function sanitizeHtml(html) {
   return temp.innerHTML
 }
 onMounted(() => {
+  // 根据登录状态决定初始视图
+  if (!authStore.isLoggedIn) {
+    showRecommendations.value = true  // 未登录显示推荐页
+  } else {
+    showRecommendations.value = false  // 已登录显示全部文章
+    fetchArticles()
+  }
   fetchFeeds()
   fetchTags()
-  fetchArticles()
   fetchUnreadCountData()
 })
 </script>
@@ -1103,6 +1147,34 @@ onMounted(() => {
 }
 .btn-add-feed:hover {
   background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Login Link */
+.login-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.login-link:hover {
+  background: var(--bg-hover);
+}
+
+.login-icon {
+  font-size: 18px;
+}
+
+.login-text {
+  font-size: 14px;
+  font-weight: 500;
   color: var(--text-primary);
 }
 </style>

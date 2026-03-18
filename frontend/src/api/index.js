@@ -17,10 +17,10 @@ api.interceptors.response.use(
   response => response,
   error => {
     if (error.response?.status === 401) {
-      // Clear auth data and redirect to login
+      // 清除本地缓存的 token，刷新页面
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      window.location.href = '/login'
+      window.location.reload()
     }
     return Promise.reject(error)
   }
