@@ -3,12 +3,14 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"rss-reader/internal/config"
 	"rss-reader/internal/handlers"
 	"rss-reader/internal/models"
 	"rss-reader/internal/repository"
+	"rss-reader/internal/schedulers"
 	"rss-reader/internal/services"
 
 	"github.com/gin-contrib/cors"
@@ -22,25 +24,49 @@ func main() {
 	// Load config
 	cfg := config.Load()
 
+	// Log webhook URL (masked)
+	if cfg.FeishuWebhookURL != "" {
+		log.Printf("Feishu webhook configured: %s", maskWebhookURL(cfg.FeishuWebhookURL))
+	}
+
 	// Connect to database
-	db, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{})
+	database, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Auto migrate - 添加新字段
-	db.AutoMigrate(&models.User{}, &models.Feed{}, &models.Article{}, &models.Tag{}, &models.ArticleTag{})
+	// Auto migrate
+	if err := database.AutoMigrate(&models.User{}, &models.Feed{}, &models.Article{}, &models.Tag{}, &models.ArticleTag{}, &models.PushConfig{}, &models.PushLog{}); err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
+	}
 
 	// Initialize repositories
-	userRepo := repository.NewUserRepository(db)
-	feedRepo := repository.NewFeedRepository(db)
-	articleRepo := repository.NewArticleRepository(db)
-	tagRepo := repository.NewTagRepository(db)
+	userRepo := repository.NewUserRepository(database)
+	feedRepo := repository.NewFeedRepository(database)
+	articleRepo := repository.NewArticleRepository(database)
+	tagRepo := repository.NewTagRepository(database)
 
 	// Initialize services
 	authService := services.NewAuthService(userRepo, cfg.JWTSecret)
-	rssService := services.NewRSSService(feedRepo, articleRepo)
+	
+	// Initialize Feishu client (optional)
+	var feishuClient *services.FeishuClient
+	if cfg.FeishuWebhookURL != "" {
+		feishuClient = services.NewFeishuClient(cfg.FeishuWebhookURL)
+		log.Printf("Feishu webhook enabled: %s", maskWebhookURL(cfg.FeishuWebhookURL))
+	} else {
+		log.Println("Feishu webhook disabled (FEISHU_WEBHOOK_URL not set)")
+	}
+	
+	rssService := services.NewRSSService(feedRepo, articleRepo, feishuClient)
 	openaiService := services.NewOpenAIService()
+
+	// Initialize Push Service
+	var pushService *services.PushService
+	if feishuClient != nil {
+		pushService = services.NewPushService(database, feishuClient)
+		log.Println("Push service initialized")
+	}
 
 	if openaiService == nil {
 		log.Println("Warning: OPENAI_API_KEY not set, AI summary feature disabled")
@@ -52,6 +78,27 @@ func main() {
 		log.Println("Fetching RSS feeds...")
 		rssService.FetchAllFeeds()
 	})
+	
+	// Setup cron for daily summary (每天 9:00 汇总推送）
+	if pushService != nil {
+		c.AddFunc("0 9 * * *", func() {
+			log.Println("Sending daily summary...")
+			if err := pushService.SendDailySummary(); err != nil {
+				log.Printf("Error sending daily summary: %v", err)
+			} else {
+				log.Println("Daily summary sent successfully")
+			}
+		})
+	}
+
+	// Initialize and start Push Scheduler
+	var pushScheduler *schedulers.PushScheduler
+	if pushService != nil {
+		pushScheduler = schedulers.NewPushScheduler(pushService)
+		pushScheduler.Start()
+		defer pushScheduler.Stop()
+	}
+	
 	c.Start()
 
 	// Fetch feeds immediately on startup
@@ -113,6 +160,21 @@ func main() {
 			// Article Tags
 			protected.POST("/articles/tags", handlers.AddArticleTag(articleRepo))
 			protected.DELETE("/articles/tags", handlers.RemoveArticleTag(articleRepo))
+
+			// Push (test endpoint)
+			protected.POST("/push/test", handlers.TestPush(pushService))
+
+			// Push Configs
+			protected.POST("/push-configs", handlers.CreatePushConfig(pushService))
+			protected.GET("/push-configs", handlers.GetPushConfigs(pushService))
+			protected.GET("/push-configs/:id", handlers.GetPushConfig(pushService))
+			protected.PUT("/push-configs/:id", handlers.UpdatePushConfig(pushService))
+			protected.DELETE("/push-configs/:id", handlers.DeletePushConfig(pushService))
+			protected.POST("/push-configs/:id/test", handlers.TestPushConfig(pushService))
+
+			// Push Logs and Stats
+			protected.GET("/push-logs", handlers.GetPushLogs(pushService))
+			protected.GET("/push-configs/:id/stats", handlers.GetPushStats(pushService))
 		}
 	}
 
@@ -132,4 +194,16 @@ func main() {
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+}
+
+// maskWebhookURL 隐藏 webhook URL 的敏感部分
+func maskWebhookURL(url string) string {
+	if len(url) < 30 {
+		return "***" + url[len(url)-10:]
+	}
+	prefix := strings.LastIndex(url, "/hook/")
+	if prefix == -1 {
+		return url[:15] + "..." + url[len(url)-10:]
+	}
+	return url[:prefix+6] + "..." + url[len(url)-10:]
 }
