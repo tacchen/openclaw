@@ -67,7 +67,14 @@ func CreatePushConfig(pushService *services.PushService) gin.HandlerFunc {
 			copy(modelsConfig.CategoryIDs, req.CategoryIDs)
 		}
 
-		if err := pushService.CreateConfig(userID.(uint), modelsConfig); err != nil {
+		// Safe type conversion
+		userIDUint, ok := userID.(uint)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+			return
+		}
+
+		if err := pushService.CreateConfig(userIDUint, modelsConfig); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
