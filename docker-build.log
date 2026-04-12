@@ -1,0 +1,70 @@
+time="2026-04-12T22:19:34+08:00" level=warning msg="/home/prj/rss-reader/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Image rss-reader-app Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 486B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 787B 0.0s done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.24-alpine
+#3 DONE 0.9s
+
+#4 [internal] load metadata for docker.io/library/alpine:3.19
+#4 DONE 0.9s
+
+#5 [internal] load metadata for docker.io/library/node:20-alpine
+#5 DONE 0.9s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 DONE 0.0s
+
+#8 [stage-2 1/5] FROM docker.io/library/alpine:3.19@sha256:6baf43584bcb78f2e5847d1de515f23499913ac9f12bdf834811a3145eb11ca1
+#8 resolve docker.io/library/alpine:3.19@sha256:6baf43584bcb78f2e5847d1de515f23499913ac9f12bdf834811a3145eb11ca1 0.1s done
+#8 DONE 0.1s
+
+#9 [builder 1/6] FROM docker.io/library/golang:1.24-alpine@sha256:8bee1901f1e530bfb4a7850aa7a479d17ae3a18beb6e09064ed54cfd245b7191
+#9 resolve docker.io/library/golang:1.24-alpine@sha256:8bee1901f1e530bfb4a7850aa7a479d17ae3a18beb6e09064ed54cfd245b7191 0.1s done
+#9 DONE 0.1s
+
+#10 [frontend-builder 1/6] FROM docker.io/library/node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c
+#10 resolve docker.io/library/node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c 0.1s done
+#10 DONE 0.1s
+
+#7 [internal] load build context
+#7 transferring context: 949.96kB 0.9s done
+#7 DONE 1.3s
+
+#11 [builder 3/6] COPY go.mod ./
+#11 CACHED
+
+#12 [builder 2/6] WORKDIR /app
+#12 CACHED
+
+#13 [builder 4/6] RUN go mod download github.com/gin-contrib/cors github.com/gin-gonic/gin github.com/robfig/cron/v3 gorm.io/driver/postgres gorm.io/gorm github.com/golang-jwt/jwt/v5 golang.org/x/crypto github.com/mmcdole/gofeed || true
+#13 CACHED
+
+#14 [builder 5/6] COPY . .
+#14 ...
+
+#15 [frontend-builder 5/6] COPY frontend/ ./
+#15 CACHED
+
+#16 [frontend-builder 2/6] WORKDIR /app
+#16 CACHED
+
+#17 [frontend-builder 3/6] COPY frontend/package*.json ./
+#17 CACHED
+
+#18 [frontend-builder 4/6] RUN npm install
+#18 CACHED
+
+#19 [frontend-builder 6/6] RUN npm run build
+#19 CACHED
+
+#14 [builder 5/6] COPY . .

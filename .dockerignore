@@ -1,0 +1,13 @@
+.git
+.gitignore
+.vscode
+.idea
+*.md
+docs
+.env.example
+docker-compose.yml
+docker-build.log
+backend.log
+coverage.out
+sync.log
+*.log
