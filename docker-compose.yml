@@ -12,6 +12,7 @@ services:
       - OPENAI_API_KEY=fd9cdd68-4182-4133-907e-3f926c993cc4
       - OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
       - OPENAI_MODEL=deepseek-v3-2-251201
+      - FEISHU_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/968f7d62-b536-4ee5-a5d5-839931519065
     depends_on:
       db:
         condition: service_healthy
