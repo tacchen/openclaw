@@ -26,7 +26,7 @@ func NewPushService(db *gorm.DB, feishuClient *FeishuClient) *PushService {
 }
 
 // CreateConfig 创建用户推送配置
-func (s *PushService) CreateConfig(userID int, config *models.PushConfig) error {
+func (s *PushService) CreateConfig(userID uint, config *models.PushConfig) error {
 	config.UserID = uint(userID)
 	config.CreatedAt = time.Now()
 	config.UpdatedAt = time.Now()
@@ -51,14 +51,14 @@ func (s *PushService) CreateConfig(userID int, config *models.PushConfig) error 
 }
 
 // GetConfigs 获取用户推送配置
-func (s *PushService) GetConfigs(userID int) ([]models.PushConfig, error) {
+func (s *PushService) GetConfigs(userID uint) ([]models.PushConfig, error) {
 	var configs []models.PushConfig
 	err := s.db.Where("user_id = ?", userID).Find(&configs).Error
 	return configs, err
 }
 
 // GetConfig 获取指定配置
-func (s *PushService) GetConfig(userID int, configID int) (*models.PushConfig, error) {
+func (s *PushService) GetConfig(userID uint, configID int) (*models.PushConfig, error) {
 	var config models.PushConfig
 	err := s.db.Where("id = ? AND user_id = ?", configID, userID).First(&config).Error
 	if err != nil {
@@ -68,7 +68,7 @@ func (s *PushService) GetConfig(userID int, configID int) (*models.PushConfig, e
 }
 
 // UpdateConfig 更新用户推送配置
-func (s *PushService) UpdateConfig(userID int, configID int, updates *models.PushConfig) error {
+func (s *PushService) UpdateConfig(userID uint, configID int, updates *models.PushConfig) error {
 	// 验证配置所有权
 	var existing models.PushConfig
 	if err := s.db.Where("id = ? AND user_id = ?", configID, userID).First(&existing).Error; err != nil {
@@ -101,7 +101,7 @@ func (s *PushService) UpdateConfig(userID int, configID int, updates *models.Pus
 }
 
 // DeleteConfig 删除用户推送配置
-func (s *PushService) DeleteConfig(userID int, configID int) error {
+func (s *PushService) DeleteConfig(userID uint, configID int) error {
 	// 验证配置所有权
 	var existing models.PushConfig
 	if err := s.db.Where("id = ? AND user_id = ?", configID, userID).First(&existing).Error; err != nil {
@@ -112,7 +112,7 @@ func (s *PushService) DeleteConfig(userID int, configID int) error {
 }
 
 // TestConfig 测试推送配置
-func (s *PushService) TestConfig(userID int, configID int) error {
+func (s *PushService) TestConfig(userID uint, configID int) error {
 	config, err := s.GetConfig(userID, configID)
 	if err != nil {
 		return err
@@ -132,7 +132,7 @@ func (s *PushService) LogPush(log *models.PushLog) error {
 }
 
 // GetPushLogs 获取推送日志（分页、过滤）
-func (s *PushService) GetPushLogs(userID int, filter map[string]interface{}, page, pageSize int) ([]models.PushLog, int64, error) {
+func (s *PushService) GetPushLogs(userID uint, filter map[string]interface{}, page, pageSize int) ([]models.PushLog, int64, error) {
 	var logs []models.PushLog
 	var total int64
 
