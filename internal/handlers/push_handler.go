@@ -51,6 +51,12 @@ func CreatePushConfig(pushService *services.PushService) gin.HandlerFunc {
 			return
 		}
 
+		userIDUint, ok := userID.(uint)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+			return
+		}
+
 		modelsConfig := &models.PushConfig{
 			WebhookURL:     req.WebhookURL,
 			Frequency:      req.Frequency,
@@ -67,13 +73,6 @@ func CreatePushConfig(pushService *services.PushService) gin.HandlerFunc {
 			copy(modelsConfig.CategoryIDs, req.CategoryIDs)
 		}
 
-		// Safe type conversion
-		userIDUint, ok := userID.(uint)
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
-			return
-		}
-
 		if err := pushService.CreateConfig(userIDUint, modelsConfig); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -85,6 +84,18 @@ func CreatePushConfig(pushService *services.PushService) gin.HandlerFunc {
 
 // GetPushConfigs 获取推送配置列表
 func GetPushConfigs(pushService *services.PushService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID, exists := c.Get("userID")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+			return
+		}
+
+		userIDUint, ok := userID.(uint)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+			return
+		}
 
 		configs, err := pushService.GetConfigs(userIDUint)
 		if err != nil {
