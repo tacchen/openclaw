@@ -27,7 +27,7 @@ func NewPushService(db *gorm.DB, feishuClient *FeishuClient) *PushService {
 
 // CreateConfig 创建用户推送配置
 func (s *PushService) CreateConfig(userID uint, config *models.PushConfig) error {
-	config.UserID = uint(userID)
+	config.UserID = userID
 	config.CreatedAt = time.Now()
 	config.UpdatedAt = time.Now()
 
