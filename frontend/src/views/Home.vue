@@ -139,6 +139,10 @@
               <span>📡</span>
               <span>订阅源管理</span>
             </div>
+            <div class="menu-item" @click="goToPushConfig; showUserMenu = false">
+              <span>🔔</span>
+              <span>推送配置</span>
+            </div>
             <div class="menu-divider"></div>
             <div class="menu-item menu-item-danger" @click="logout">
               <span>🚪</span>
@@ -1004,6 +1008,10 @@ function logout() {
   showUserMenu.value = false
   // 退出登录后刷新页面
   window.location.reload()
+}
+
+function goToPushConfig() {
+  router.push('/push-config')
 }
 
 

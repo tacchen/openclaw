@@ -5,6 +5,11 @@ const routes = [
     path: '/',
     name: 'Home',
     component: () => import('../views/Home.vue')
+  },
+  {
+    path: '/push-config',
+    name: 'PushConfig',
+    component: () => import('../views/PushConfig.vue')
   }
 ]
 
