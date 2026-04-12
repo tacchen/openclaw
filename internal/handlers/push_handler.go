@@ -85,12 +85,6 @@ func CreatePushConfig(pushService *services.PushService) gin.HandlerFunc {
 
 // GetPushConfigs 获取推送配置列表
 func GetPushConfigs(pushService *services.PushService) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userID, exists := c.Get("userID")
-		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-			return
-		}
 
 		configs, err := pushService.GetConfigs(userIDUint)
 		if err != nil {
