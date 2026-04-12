@@ -18,6 +18,9 @@ import (
 	"github.com/robfig/cron/v3"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"log"
+	"strings"
 )
 
 func main() {
