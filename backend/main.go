@@ -20,7 +20,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"log"
-	"strings"
 )
 
 func main() {
