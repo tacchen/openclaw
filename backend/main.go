@@ -18,7 +18,6 @@ import (
 	"github.com/robfig/cron/v3"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func main() {
@@ -32,7 +31,7 @@ func main() {
 
 	// Connect to database
 	database, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
