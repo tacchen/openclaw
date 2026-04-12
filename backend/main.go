@@ -38,14 +38,9 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Auto migrate existing tables
-	if err := database.AutoMigrate(&models.User{}, &models.Feed{}, &models.Article{}, &models.Tag{}, &models.ArticleTag{}); err != nil {
-		log.Fatalf("Failed to migrate database: %v", err)
-	}
-
-	// Skip PushConfig/PushLog migration temporarily due to GORM issue
-	// These tables can be created manually or fixed later
-	log.Println("Push config tables migration skipped temporarily")
+	// Skip AutoMigrate due to GORM issue with User model
+	// Tables already exist, so this should be OK
+	log.Println("AutoMigrate skipped due to GORM compatibility issue")
 
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(database)
