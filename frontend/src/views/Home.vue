@@ -1010,7 +1010,7 @@ function logout() {
   window.location.reload()
 }
 
-function goToPushConfig() {
+const goToPushConfig = () => {
   router.push('/push-config')
 }
 
