@@ -1,37 +1,10 @@
 package models
 
 import (
-	"database/sql/driver"
-	"encoding/json"
-	"errors"
 	"time"
 
 	"gorm.io/gorm"
 )
-
-// Int64Array 自定义类型，用于 PostgreSQL 整数数组
-type Int64Array []int64
-
-// Value 实现 driver.Valuer 接口
-func (a Int64Array) Value() (driver.Value, error) {
-	if a == nil {
-		return nil, nil
-	}
-	return json.Marshal(a)
-}
-
-// Scan 实现 sql.Scanner 接口
-func (a *Int64Array) Scan(value interface{}) error {
-	if value == nil {
-		*a = nil
-		return nil
-	}
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion to []byte failed")
-	}
-	return json.Unmarshal(bytes, a)
-}
 
 // PushConfig 用户推送配置
 type PushConfig struct {

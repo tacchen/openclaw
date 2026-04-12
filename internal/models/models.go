@@ -1,53 +1,62 @@
 package models
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
 )
 
-type User struct {
-	gorm.Model
-	Email    string `gorm:"uniqueIndex;not null" json:"email"`
-	Password string `gorm:"not null" json:"-"`
-	Feeds    []Feed `gorm:"foreignKey:UserID" json:"feeds,omitempty"`
+// Int64Array 自定义类型，用于 PostgreSQL 整数数组
+type Int64Array []int64
+
+// Value 实现 driver.Valuer 接口
+func (a Int64Array) Value() (driver.Value, error) {
+	if a == nil {
+		return nil, nil
+	}
+	return json.Marshal(a)
 }
 
-type Feed struct {
-	ID        uint       `gorm:"primarykey" json:"id"`
-	URL       string     `gorm:"not null;uniqueIndex:idx_user_feed" json:"url"`
-	Title     string     `json:"title"`
-	Category  string     `json:"category"`
-	IconURL   string     `json:"icon_url,omitempty"`
-	UserID    uint       `gorm:"uniqueIndex:idx_user_feed" json:"user_id"`
-	LastFetch *time.Time `json:"last_fetch,omitempty"`
-	Articles  []Article `gorm:"foreignKey:FeedID" json:"articles,omitempty"`
+// Scan 实现 sql.Scanner 接口
+func (a *Int64Array) Scan(value interface{}) error {
+	if value == nil {
+		*a = nil
+		return nil
+	}
+
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(bytes, a)
 }
 
-type Article struct {
-	ID          uint       `gorm:"primarykey" json:"id"`
-	FeedID      uint       `json:"feed_id"`
-	Title       string     `gorm:"index;not null" json:"title"`
-	Link        string     `json:"link"`
-	Description string     `json:"description"`
-	Content     string     `json:"content,omitempty"`
-	PubDate     *time.Time `json:"pub_date,omitempty"`
-	IsRead      bool       `gorm:"default:false" json:"is_read"`
-	UserID      uint       `json:"user_id"`
-	Tags        []Tag      `gorm:"many2many:article_tags;" json:"tags,omitempty"`
-	Summary    string     `json:"summary,omitempty"`
-	KeyPoints  string     `json:"key_points,omitempty"`
-	Feed        *Feed      `gorm:"foreignKey:FeedID" json:"feed,omitempty"`
+// PushConfig 用户推送配置
+type PushConfig struct {
+	ID             uint       `gorm:"primarykey" json:"id"`
+	UserID         uint       `gorm:"not null;uniqueIndex:idx_user_config" json:"user_id"`
+	WebhookURL     string     `gorm:"not null" json:"webhook_url"`
+	Frequency      string     `gorm:"not null;default:'daily'" json:"frequency"`
+	PushTime       string     `gorm:"not null;default:'09:00'" json:"push_time"`
+	MinUnreadCount int        `gorm:"default:1" json:"min_unread_count"`
+	FeedIDs        Int64Array `gorm:"type:jsonb" json:"feed_ids,omitempty"`
+	CategoryIDs    Int64Array `gorm:"type:jsonb" json:"category_ids,omitempty"`
+	LastPushAt     *time.Time `json:"last_push_at,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
-type Tag struct {
-	ID        uint       `gorm:"primarykey" json:"id"`
-	Name      string     `json:"name"`
-	UserID    uint       `json:"user_id"`
-	Articles  []Article `gorm:"many2many:article_tags;" json:"articles,omitempty"`
-}
-
-type ArticleTag struct {
-	ArticleID uint `json:"article_id"`
-	TagID     uint `json:"tag_id"`
+// PushLog 推送日志
+type PushLog struct {
+	ID           uint       `gorm:"primarykey" json:"id"`
+	UserID       uint       `gorm:"not null;index" json:"user_id"`
+	PushConfigID uint       `gorm:"not null;index" json:"push_config_id"`
+	Status       string     `gorm:"not null" json:"status"`
+	ArticleCount int        `gorm:"not null" json:"article_count"`
+	Message      string     `gorm:"type:text" json:"message,omitempty"`
+	ErrorMessage string     `gorm:"type:text" json:"error_message,omitempty"`
+	SentAt       time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP;index" json:"sent_at"`
 }
