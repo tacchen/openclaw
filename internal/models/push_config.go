@@ -36,7 +36,7 @@ func (a *Int64Array) Scan(value interface{}) error {
 // PushConfig 用户推送配置
 type PushConfig struct {
 	ID             uint       `gorm:"primarykey" json:"id"`
-	UserID         uint       `gorm:"not null;index;uniqueIndex:idx_user_config" json:"user_id"`
+	UserID         uint       `gorm:"not null;uniqueIndex:idx_user_config" json:"user_id"`
 	WebhookURL     string     `gorm:"not null" json:"webhook_url"`
 	Frequency      string     `gorm:"not null;default:'daily'" json:"frequency"` // daily, weekly, monthly
 	PushTime       string     `gorm:"not null;default:'09:00'" json:"push_time"` // HH:MM format

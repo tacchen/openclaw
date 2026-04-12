@@ -1,0 +1,51 @@
+2026/04/11 15:19:06 Feishu webhook configured: https://open.feishu.cn/open-apis/bot/v2/hook/...9931519065
+
+2026/04/11 15:19:06 [31;1m/home/prj/rss-reader/backend/main.go:38 [35;1minsufficient arguments
+[0m[33m[0.039ms] [34;1m[rows:-][0m SELECT * FROM "users" LIMIT 1
+2026/04/11 15:19:06 Feishu webhook enabled: https://open.feishu.cn/open-apis/bot/v2/hook/...9931519065
+2026/04/11 15:19:06 Push service initialized for daily summary
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /assets/*filepath         --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] HEAD   /assets/*filepath         --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] POST   /api/auth/register        --> main.main.Register.func10 (4 handlers)
+[GIN-debug] POST   /api/auth/login           --> main.main.Login.func11 (4 handlers)
+[GIN-debug] GET    /api/feeds                --> main.main.GetFeeds.func13 (5 handlers)
+[GIN-debug] POST   /api/feeds                --> main.main.CreateFeed.func14 (5 handlers)
+[GIN-debug] PUT    /api/feeds/:id            --> main.main.UpdateFeed.func15 (5 handlers)
+[GIN-debug] DELETE /api/feeds/:id            --> main.main.DeleteFeed.func16 (5 handlers)
+[GIN-debug] GET    /api/articles             --> main.main.GetArticles.func17 (5 handlers)
+[GIN-debug] GET    /api/articles/search      --> main.main.SearchArticles.func18 (5 handlers)
+[GIN-debug] GET    /api/articles/unread-count --> main.main.GetUnreadCount.func19 (5 handlers)
+[GIN-debug] PATCH  /api/articles/:id/read    --> main.main.MarkArticleRead.func20 (5 handlers)
+[GIN-debug] POST   /api/articles/mark-all-read --> main.main.MarkAllRead.func21 (5 handlers)
+[GIN-debug] POST   /api/articles/:id/summary --> main.main.GenerateArticleSummary.func22 (5 handlers)
+[GIN-debug] GET    /api/articles/:id/summary --> main.main.GetArticleSummary.func23 (5 handlers)
+[GIN-debug] GET    /api/tags                 --> main.main.GetTags.func24 (5 handlers)
+[GIN-debug] POST   /api/tags                 --> main.main.CreateTag.func25 (5 handlers)
+[GIN-debug] DELETE /api/tags/:id             --> main.main.DeleteTag.func26 (5 handlers)
+[GIN-debug] POST   /api/articles/tags        --> main.main.AddArticleTag.func27 (5 handlers)
+[GIN-debug] DELETE /api/articles/tags        --> main.main.RemoveArticleTag.func28 (5 handlers)
+[GIN-debug] POST   /api/push/test            --> main.main.TestPush.func29 (5 handlers)
+2026/04/11 15:19:06 Server starting on port 8080...
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+2026/04/11 15:19:11 Initial RSS feed fetch...
+2026/04/11 15:19:13 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 15:19:13 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 15:19:47 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 15:19:49 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+
+2026/04/11 15:20:22 [31;1m/home/prj/rss-reader/internal/repository/repository.go:39 [35;1mrecord not found
+[0m[33m[6.492ms] [34;1m[rows:0][0m SELECT * FROM "users" WHERE email = 'test@example.com' AND "users"."deleted_at" IS NULL ORDER BY "users"."id" LIMIT 1
+[GIN] 2026/04/11 - 15:20:22 | 201 |    91.54206ms |             ::1 | POST     "/api/auth/register"
+[GIN] 2026/04/11 - 15:20:58 | 200 |   80.398132ms |             ::1 | POST     "/api/auth/login"
+[GIN] 2026/04/11 - 15:21:56 | 401 |     142.089µs |             ::1 | POST     "/api/feeds"
+[GIN] 2026/04/11 - 15:22:20 | 200 |   79.718785ms |             ::1 | POST     "/api/auth/login"
+[GIN] 2026/04/11 - 15:26:20 | 200 |   79.730483ms |             ::1 | POST     "/api/auth/login"
+[GIN] 2026/04/11 - 15:26:38 | 401 |      54.466µs |             ::1 | POST     "/api/push/test"

@@ -18,6 +18,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func main() {
@@ -30,14 +31,17 @@ func main() {
 	}
 
 	// Connect to database
-	database, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{})
+	database, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Auto migrate
-	if err := database.AutoMigrate(&models.User{}, &models.Feed{}, &models.Article{}, &models.Tag{}, &models.ArticleTag{}, &models.PushConfig{}, &models.PushLog{}); err != nil {
-		log.Fatalf("Failed to migrate database: %v", err)
+	// Auto migrate (skip existing tables)
+	// Only migrate new tables
+	if err := database.AutoMigrate(&models.PushConfig{}, &models.PushLog{}); err != nil {
+		log.Fatalf("Failed to migrate push tables: %v", err)
 	}
 
 	// Initialize repositories

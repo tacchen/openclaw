@@ -14,12 +14,14 @@ import (
 type RSSService struct {
 	feedRepo    *repository.FeedRepository
 	articleRepo *repository.ArticleRepository
+	feishuClient *FeishuClient
 }
 
-func NewRSSService(feedRepo *repository.FeedRepository, articleRepo *repository.ArticleRepository) *RSSService {
+func NewRSSService(feedRepo *repository.FeedRepository, articleRepo *repository.ArticleRepository, feishuClient *FeishuClient) *RSSService {
 	return &RSSService{
-		feedRepo:    feedRepo,
-		articleRepo: articleRepo,
+		feedRepo:     feedRepo,
+		articleRepo:  articleRepo,
+		feishuClient: feishuClient,
 	}
 }
 
@@ -86,7 +88,11 @@ func (s *RSSService) FetchAndSaveArticles(feed *models.Feed) error {
 
 		if err := s.articleRepo.Create(article); err != nil {
 			log.Printf("Error saving article: %v", err)
+			continue
 		}
+
+		// 不再立即发送飞书通知
+		// 重要文章将通过 PushService 定时汇总推送
 	}
 
 	return nil

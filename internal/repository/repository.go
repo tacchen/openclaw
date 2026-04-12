@@ -124,57 +124,61 @@ func (r *ArticleRepository) FindByUserID(userID uint, page, pageSize int, feedID
 	var articles []models.Article
 	var total int64
 
-	query := r.db.Model(&models.Article{}).Where("articles.user_id = ?", userID)
+	// 构建筛选条件的辅助函数
+	applyFilters := func(query *gorm.DB) *gorm.DB {
+		query = query.Where("articles.user_id = ?", userID)
 
-	// Filter by feed_id
-	if feedID > 0 {
-		query = query.Where("articles.feed_id = ?", feedID)
-	}
-
-	// Filter by tag_id
-	if tagID > 0 {
-		query = query.Joins("JOIN article_tags ON article_tags.article_id = articles.id").
-			Where("article_tags.tag_id = ?", tagID)
-	}
-
-	// Filter by category (支持多选，逗号分隔)
-	if category != "" {
-		categories := strings.Split(category, ",")
-		query = query.Joins("JOIN feeds ON feeds.id = articles.feed_id").
-			Where("feeds.category IN ?", categories)
-	}
-
-	// Filter by is_read
-	if isRead != nil {
-		query = query.Where("articles.is_read = ?", *isRead)
-	}
-
-	// Filter by has_summary
-	if hasSummary != nil {
-		if *hasSummary {
-			query = query.Where("articles.summary != ?", "")
-		} else {
-			query = query.Where("articles.summary = ?", "")
+		// Filter by feed_id
+		if feedID > 0 {
+			query = query.Where("articles.feed_id = ?", feedID)
 		}
+
+		// Filter by tag_id
+		if tagID > 0 {
+			query = query.Joins("JOIN article_tags ON article_tags.article_id = articles.id").
+				Where("article_tags.tag_id = ?", tagID)
+		}
+
+		// Filter by category (支持多选，逗号分隔)
+		if category != "" {
+			categories := strings.Split(category, ",")
+			query = query.Joins("JOIN feeds ON feeds.id = articles.feed_id").
+				Where("feeds.category IN ?", categories)
+		}
+
+		// Filter by is_read
+		if isRead != nil {
+			query = query.Where("articles.is_read = ?", *isRead)
+		}
+
+		// Filter by has_summary
+		if hasSummary != nil {
+			if *hasSummary {
+				query = query.Where("articles.summary != ?", "")
+			} else {
+				query = query.Where("articles.summary = ?", "")
+			}
+		}
+		return query
 	}
 
-	if err := query.Count(&total).Error; err != nil {
+	// 先获取总数
+	countQuery := r.db.Model(&models.Article{})
+	countQuery = applyFilters(countQuery)
+	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
+	// 使用 Preload 预加载 Feed 和 Tags，避免 N+1 查询问题
+	// 同时排除 Content 字段，减少数据传输量（列表页不需要完整内容）
 	offset := (page - 1) * pageSize
-	if err := query.Order("articles.pub_date DESC").Offset(offset).Limit(pageSize).Find(&articles).Error; err != nil {
+	dataQuery := r.db.Select("articles.id", "articles.feed_id", "articles.title", "articles.link",
+		"articles.description", "articles.pub_date", "articles.is_read", "articles.user_id",
+		"articles.summary", "articles.key_points").
+		Preload("Feed").Preload("Tags")
+	dataQuery = applyFilters(dataQuery)
+	if err := dataQuery.Order("articles.pub_date DESC").Offset(offset).Limit(pageSize).Find(&articles).Error; err != nil {
 		return nil, 0, err
-	}
-
-	// Fetch feed info
-	for i := range articles {
-		var feed models.Feed
-		if err := r.db.First(&feed, articles[i].FeedID).Error; err == nil {
-			articles[i].Feed = &feed
-		}
-		// Fetch tags
-		r.db.Model(&articles[i]).Association("Tags").Find(&articles[i].Tags)
 	}
 
 	return articles, total, nil
@@ -182,7 +186,8 @@ func (r *ArticleRepository) FindByUserID(userID uint, page, pageSize int, feedID
 
 func (r *ArticleRepository) SearchByTitle(userID uint, query string) ([]models.Article, error) {
 	var articles []models.Article
-	if err := r.db.Where("user_id = ? AND title ILIKE ?", userID, "%"+query+"%").
+	if err := r.db.Select("id", "feed_id", "title", "link", "description", "pub_date", "is_read", "user_id").
+		Where("user_id = ? AND title ILIKE ?", userID, "%"+query+"%").
 		Order("pub_date DESC").Find(&articles).Error; err != nil {
 		return nil, err
 	}

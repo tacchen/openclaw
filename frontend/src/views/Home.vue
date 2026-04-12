@@ -8,7 +8,7 @@
           <span>RSS Reader</span>
         </div>
         <button class="btn btn-ghost btn-icon" @click="toggleTheme" :title="theme === 'dark' ? '切换亮色' : '切换暗色'">
-          {{ theme === 'dark' ? '☀️' : '🌙' }}
+          <BulbOutlined />
         </button>
       </div>
       
@@ -19,7 +19,7 @@
           :class="{ active: showRecommendations }"
           @click="goHome"
         >
-          <span class="home-icon">🏠</span>
+          <HomeOutlined class="home-icon" />
           <span class="home-text">首页</span>
         </button>
         
@@ -62,7 +62,8 @@
               :class="{ active: selectedFeedId === 0 && selectedTagId === 0 }"
               @click="selectFeed(0)"
             >
-              <div class="feed-icon">📰</div>
+              <FileTextOutlined,
+  BulbOutlined class="feed-icon" />
               <div class="feed-info">
                 <div class="feed-name">全部文章</div>
               </div>
@@ -97,7 +98,7 @@
               :class="{ active: selectedTagId === tag.id }"
               @click="selectTag(tag.id)"
             >
-              <div class="feed-icon">🏷️</div>
+              <TagOutlined class="feed-icon" />
               <div class="feed-info">
                 <div class="feed-name">{{ tag.name }}</div>
               </div>
@@ -114,7 +115,7 @@
       <div class="user-section">
         <!-- 未登录：显示登录入口 -->
         <button v-if="!authStore.isLoggedIn" class="login-link" @click="showAuthModal = true">
-          <span class="login-icon">🔐</span>
+          <LoginOutlined class="login-icon" />
           <span class="login-text">登录</span>
         </button>
         
@@ -189,7 +190,7 @@
             </div>
           </div>
           <div class="search-bar">
-            <span class="search-icon">🔍</span>
+            <SearchOutlined class="search-icon" />
             <input 
               v-model="searchQuery" 
               placeholder="搜索文章..."
@@ -197,7 +198,7 @@
             />
           </div>
           <button class="btn btn-ghost btn-icon" @click="fetchArticles" title="刷新">
-            🔄
+            <ReloadOutlined />
           </button>
         </div>
       </header>
@@ -484,6 +485,16 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import AuthModal from '../components/AuthModal.vue'
+import { 
+  HomeOutlined, 
+  ReloadOutlined, 
+  LoginOutlined, 
+  
+  SearchOutlined, 
+  TagOutlined, 
+  FileTextOutlined,
+  BulbOutlined 
+} from '@ant-design/icons-vue'
 import { useRouter } from 'vue-router'
 import api, { markArticleRead, markAllRead, getUnreadCount, generateSummary as apiGenerateSummary } from '../api'
 
@@ -579,14 +590,12 @@ function setReadFilter(value) {
 // Add recommended feed
 async function addRecommendedFeed(rec) {
   if (rec.added || rec.adding) return
-  
   // 检查登录状态
   if (!authStore.isLoggedIn) {
     pendingAction.value = () => doAddFeed(rec)
     showAuthModal.value = true
     return
   }
-  
   doAddFeed(rec)
 }
 
@@ -758,15 +767,12 @@ async function updateFeed() {
 async function importFeeds(event) {
   const file = event.target.files[0]
   if (!file) return
-  
   const text = await file.text()
   const parser = new DOMParser()
   const doc = parser.parseFromString(text, 'text/xml')
   const outlines = doc.querySelectorAll('outline[xmlUrl]')
-  
   let imported = 0
   let failed = 0
-  
   for (const outline of outlines) {
     const url = outline.getAttribute('xmlUrl')
     const title = outline.getAttribute('title') || outline.getAttribute('text') || ''
@@ -780,7 +786,6 @@ async function importFeeds(event) {
       console.error('Failed to import:', url, e)
     }
   }
-  
   event.target.value = ''
   fetchFeeds()
   alert(`导入完成：成功 ${imported} 个，失败 ${failed} 个`)
@@ -1043,7 +1048,6 @@ onMounted(() => {
     fetchTags()
     fetchUnreadCountData()
   }
-  
   // 点击外部区域关闭下拉菜单
   document.addEventListener('click', (e) => {
     const target = e.target

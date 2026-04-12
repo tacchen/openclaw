@@ -27,6 +27,11 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// GetUserID returns the user ID from claims
+func (c *Claims) GetUserID() uint {
+	return c.UserID
+}
+
 func (s *AuthService) Register(email, password string) (*models.User, error) {
 	// Check if user exists
 	if _, err := s.userRepo.FindByEmail(email); err == nil {

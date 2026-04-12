@@ -1,5 +1,8 @@
 # RSS Reader
 
+[![CI](https://github.com/your-username/rss-reader/workflows/CI/badge.svg)](https://github.com/your-username/rss-reader/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/your-username/rss-reader)](https://goreportcard.com/report/github.com/your-username/rss-reader)
+
 一个基于 Go + Vue 3 的 RSS 新闻订阅系统。
 
 ## 技术栈
@@ -24,6 +27,7 @@
 
 - Docker
 - Docker Compose
+- Go 1.21+ (本地开发)
 
 ### 启动服务
 
@@ -82,9 +86,78 @@ rss-reader/
 | PORT | 8080 | 服务端口 |
 | DATABASE_URL | - | PostgreSQL 连接串 |
 | JWT_SECRET | - | JWT 密钥 |
+| OPENAI_API_KEY | - | OpenAI API Key（可选）|
+| OPENAI_BASE_URL | - | OpenAI API URL（可选）|
+| OPENAI_MODEL | - | OpenAI 模型（可选）|
+
+## 开发
+
+### 运行测试
+
+```bash
+# 运行所有测试
+go test ./... -v -cover
+
+# 使用测试脚本
+bash scripts/test.sh
+
+# 生成测试覆盖率报告
+go test ./... -coverprofile=coverage.out
+go tool cover -html=coverage.out
+```
+
+**注意**: 测试使用 SQLite 内存数据库，首次编译需要一些时间（CGO）。
+
+### 代码检查
+
+```bash
+# 运行 golangci-lint
+golangci-lint run
+
+# 代码格式化
+gofmt -w .
+```
+
+### 本地开发
+
+```bash
+# 安装依赖
+go mod download
+
+cd frontend
+npm install
+
+# 启动后端（需要 PostgreSQL 数据库）
+export DATABASE_URL="postgres://user:password@localhost:5432/rss?sslmode=disable"
+go run backend/main.go
+
+# 启动前端
+cd frontend
+npm run dev
+```
 
 ## 停止服务
 
 ```bash
 docker-compose down
 ```
+
+## 文档
+
+- [API 文档](./docs/api.md) - 完整的 API 参考
+- [架构文档](./docs/architecture.md) - 系统架构设计
+- [测试文档](./docs/testing.md) - 测试指南和覆盖率
+- [AGENTS.md](./AGENTS.md) - AI Agent 行为指南
+- [Harness 评估](./docs/harness-assessment.md) - Harness Engineering 状态
+- [Harness 迁移计划](/home/doc/rssreader-harness-migration.md) - 完整的改造路线图
+
+## CI/CD
+
+项目使用 GitHub Actions 进行持续集成：
+
+- 自动运行测试
+- 代码质量检查 (golangci-lint)
+- 构建验证
+- 测试覆盖率报告
+
+查看 CI 状态: https://github.com/your-username/rss-reader/actions

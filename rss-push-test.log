@@ -1,0 +1,135 @@
+2026/04/11 15:56:38 Feishu webhook configured: https://open.feishu.cn/open-apis/bot/v2/hook/...9931519065
+
+2026/04/11 15:56:38 [31;1m/home/prj/rss-reader/backend/main.go:38 [35;1minsufficient arguments
+[0m[33m[0.070ms] [34;1m[rows:-][0m SELECT * FROM "users" LIMIT 1
+2026/04/11 15:56:38 Feishu webhook enabled: https://open.feishu.cn/open-apis/bot/v2/hook/...9931519065
+2026/04/11 15:56:38 Push service initialized for daily summary
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /assets/*filepath         --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] HEAD   /assets/*filepath         --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] POST   /api/auth/register        --> main.main.Register.func10 (4 handlers)
+[GIN-debug] POST   /api/auth/login           --> main.main.Login.func11 (4 handlers)
+[GIN-debug] GET    /api/feeds                --> main.main.GetFeeds.func13 (5 handlers)
+[GIN-debug] POST   /api/feeds                --> main.main.CreateFeed.func14 (5 handlers)
+[GIN-debug] PUT    /api/feeds/:id            --> main.main.UpdateFeed.func15 (5 handlers)
+[GIN-debug] DELETE /api/feeds/:id            --> main.main.DeleteFeed.func16 (5 handlers)
+[GIN-debug] GET    /api/articles             --> main.main.GetArticles.func17 (5 handlers)
+[GIN-debug] GET    /api/articles/search      --> main.main.SearchArticles.func18 (5 handlers)
+[GIN-debug] GET    /api/articles/unread-count --> main.main.GetUnreadCount.func19 (5 handlers)
+[GIN-debug] PATCH  /api/articles/:id/read    --> main.main.MarkArticleRead.func20 (5 handlers)
+[GIN-debug] POST   /api/articles/mark-all-read --> main.main.MarkAllRead.func21 (5 handlers)
+[GIN-debug] POST   /api/articles/:id/summary --> main.main.GenerateArticleSummary.func22 (5 handlers)
+[GIN-debug] GET    /api/articles/:id/summary --> main.main.GetArticleSummary.func23 (5 handlers)
+[GIN-debug] GET    /api/tags                 --> main.main.GetTags.func24 (5 handlers)
+[GIN-debug] POST   /api/tags                 --> main.main.CreateTag.func25 (5 handlers)
+[GIN-debug] DELETE /api/tags/:id             --> main.main.DeleteTag.func26 (5 handlers)
+[GIN-debug] POST   /api/articles/tags        --> main.main.AddArticleTag.func27 (5 handlers)
+[GIN-debug] DELETE /api/articles/tags        --> main.main.RemoveArticleTag.func28 (5 handlers)
+[GIN-debug] POST   /api/push/test            --> main.main.TestPush.func29 (5 handlers)
+2026/04/11 15:56:38 Server starting on port 8080...
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+2026/04/11 15:56:43 Initial RSS feed fetch...
+2026/04/11 15:56:43 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 15:56:43 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 15:57:23 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 15:57:25 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+[GIN] 2026/04/11 - 15:58:35 | 200 |   81.097598ms |             ::1 | POST     "/api/auth/login"
+[GIN] 2026/04/11 - 15:59:04 | 401 |     123.572µs |             ::1 | POST     "/api/feeds"
+[GIN] 2026/04/11 - 15:59:43 | 200 |   81.381352ms |             ::1 | POST     "/api/auth/login"
+[GIN] 2026/04/11 - 16:00:08 | 401 |      89.032µs |             ::1 | POST     "/api/feeds"
+[GIN] 2026/04/11 - 16:00:48 | 401 |      96.086µs |             ::1 | POST     "/api/feeds"
+[GIN] 2026/04/11 - 16:01:38 | 200 |   79.651582ms |             ::1 | POST     "/api/auth/login"
+[GIN] 2026/04/11 - 16:02:17 | 401 |     106.794µs |             ::1 | POST     "/api/feeds"
+[GIN] 2026/04/11 - 16:07:34 | 200 |   21.922967ms |  159.89.123.129 | GET      "/squid-internal-mgr/cachemgr.cgi"
+[GIN] 2026/04/11 - 16:11:25 | 200 |   79.729277ms |             ::1 | POST     "/api/auth/login"
+2026/04/11 16:26:38 Fetching RSS feeds...
+2026/04/11 16:26:40 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 16:26:40 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 16:27:30 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 16:27:32 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+2026/04/11 16:56:38 Fetching RSS feeds...
+2026/04/11 16:56:44 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 16:56:44 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 16:57:16 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 16:57:16 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+2026/04/11 17:26:38 Fetching RSS feeds...
+2026/04/11 17:26:41 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 17:26:41 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 17:27:16 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 17:27:18 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+[GIN] 2026/04/11 - 17:48:20 | 200 |     850.407µs |    31.58.214.23 | GET      "/.cline/mcp_settings.json"
+2026/04/11 17:56:38 Fetching RSS feeds...
+2026/04/11 17:56:39 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 17:56:39 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 17:57:09 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 17:57:12 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+2026/04/11 18:26:38 Fetching RSS feeds...
+2026/04/11 18:26:38 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 18:26:38 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 18:27:10 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 18:27:16 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+2026/04/11 18:56:38 Fetching RSS feeds...
+2026/04/11 18:56:39 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 18:56:39 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 18:57:18 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 18:57:18 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+2026/04/11 19:26:38 Fetching RSS feeds...
+2026/04/11 19:26:46 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 19:26:46 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 19:27:17 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 19:27:17 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+[GIN] 2026/04/11 - 19:50:49 | 200 |      95.018µs |    5.61.209.107 | GET      "/SDK/webLanguage"
+2026/04/11 19:56:38 Fetching RSS feeds...
+2026/04/11 19:56:47 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 19:56:47 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 19:57:17 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 19:57:17 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+[GIN] 2026/04/11 - 20:00:41 | 200 |     164.406µs |   93.123.72.166 | GET      "/SDK/webLanguage"
+[GIN] 2026/04/11 - 20:01:37 | 200 |     131.188µs |    20.46.226.81 | GET      "/"
+[GIN] 2026/04/11 - 20:19:35 | 200 |     107.522µs |  176.65.139.118 | GET      "/login"
+2026/04/11 20:26:38 Fetching RSS feeds...
+2026/04/11 20:26:38 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 20:26:38 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 20:27:08 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 20:27:19 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+[GIN] 2026/04/11 - 20:31:59 | 200 |     146.798µs |    108.165.95.8 | GET      "/login"
+[GIN] 2026/04/11 - 20:47:56 | 200 |       88.32µs |   104.164.8.186 | GET      "/login"
+2026/04/11 20:56:38 Fetching RSS feeds...
+2026/04/11 20:56:38 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 20:56:38 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 20:57:10 Error parsing feed https://36kr.com/feed: context deadline exceeded (Client.Timeout or context cancellation while reading body)
+2026/04/11 20:57:45 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 20:57:45 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+[GIN] 2026/04/11 - 21:09:50 | 200 |      87.678µs | 158.160.217.206 | GET      "/login"
+2026/04/11 21:26:38 Fetching RSS feeds...
+2026/04/11 21:26:40 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 21:26:40 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 21:27:19 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 21:27:19 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+[GIN] 2026/04/11 - 21:52:17 | 200 |      90.322µs |   104.164.8.186 | GET      "/login"
+2026/04/11 21:56:38 Fetching RSS feeds...
+2026/04/11 21:56:49 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 21:56:49 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 21:57:19 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 21:57:19 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+2026/04/11 22:26:38 Fetching RSS feeds...
+2026/04/11 22:26:42 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 22:26:42 Error parsing feed : Get "": unsupported protocol scheme ""
+2026/04/11 22:27:12 Error parsing feed https://36kr.com/feed: context deadline exceeded (Client.Timeout or context cancellation while reading body)
+2026/04/11 22:27:42 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 22:27:44 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+[GIN] 2026/04/11 - 22:50:12 | 200 |     115.323µs |   104.164.8.186 | GET      "/login"
+2026/04/11 22:56:38 Fetching RSS feeds...
+2026/04/11 22:56:38 Error parsing feed https://daily.zhihu.com/feed: http error: 404 Not Found
+2026/04/11 22:56:38 Error parsing feed : Get "": unsupported protocol scheme ""
+[GIN] 2026/04/11 - 22:57:04 | 200 |       86.63µs |  202.148.18.220 | GET      "/"
+2026/04/11 22:57:10 Error parsing feed https://www.huxiu.com/rss/0.xml: Get "https://www.huxiu.com/rss/0.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/04/11 22:57:15 Error parsing feed  https://blog.zgsec.cn/feed/: parse " https://blog.zgsec.cn/feed/": first path segment in URL cannot contain colon
+[GIN] 2026/04/11 - 23:12:06 | 200 |     112.518µs |    54.208.25.95 | GET      "/"

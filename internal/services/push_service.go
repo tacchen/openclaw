@@ -241,6 +241,11 @@ func (s *PushService) ProcessDailyPushes() error {
 func (s *PushService) ProcessWeeklyPushes() error {
 	// 查询所有每周推送配置
 	var configs []models.PushConfig
+	if err := s.db.Where("frequency = ?", "weekly").Find(&configs).Error; err != nil {
+		return fmt.Errorf("query weekly configs error: %w", err)
+	}
+
+	// 过滤出今天应该推送的配置
 	now := time.Now()
 	currentTime := now.Format("15:04")
 	weekday := int(now.Weekday()) // Sunday = 0, Monday = 1, etc.
@@ -251,12 +256,16 @@ func (s *PushService) ProcessWeeklyPushes() error {
 		weekNum = 7
 	}
 
-	if err := s.db.Where("frequency = ? AND push_time = ? AND weekday = ?", "weekly", currentTime, weekNum).Find(&configs).Error; err != nil {
-		return fmt.Errorf("query weekly configs error: %w", err)
-	}
-
 	// 处理每个配置
 	for _, config := range configs {
+		// 检查推送时间是否匹配
+		if config.PushTime != currentTime {
+			continue
+		}
+
+		// TODO: 这里需要添加星期几的过滤逻辑
+		// 当前 PushConfig 模型没有 weekday 字段，所以暂时跳过
+		// 未来可以添加 weekday 字段来实现精确的每周推送
 		if err := s.processConfig(&config); err != nil {
 			s.LogPush(&models.PushLog{
 				UserID:       config.UserID,

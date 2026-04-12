@@ -45,7 +45,7 @@ func CreatePushConfig(pushService *services.PushService) gin.HandlerFunc {
 		}
 
 		// 从上下文获取用户 ID
-		userID, exists := c.Get("user_id")
+		userID, exists := c.Get("userID")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 			return
@@ -79,7 +79,7 @@ func CreatePushConfig(pushService *services.PushService) gin.HandlerFunc {
 // GetPushConfigs 获取推送配置列表
 func GetPushConfigs(pushService *services.PushService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := c.Get("user_id")
+		userID, exists := c.Get("userID")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 			return
@@ -98,7 +98,7 @@ func GetPushConfigs(pushService *services.PushService) gin.HandlerFunc {
 // GetPushConfig 获取单个推送配置
 func GetPushConfig(pushService *services.PushService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := c.Get("user_id")
+		userID, exists := c.Get("userID")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 			return
@@ -123,7 +123,7 @@ func GetPushConfig(pushService *services.PushService) gin.HandlerFunc {
 // UpdatePushConfig 更新推送配置
 func UpdatePushConfig(pushService *services.PushService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := c.Get("user_id")
+		userID, exists := c.Get("userID")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 			return
@@ -169,7 +169,7 @@ func UpdatePushConfig(pushService *services.PushService) gin.HandlerFunc {
 // DeletePushConfig 删除推送配置
 func DeletePushConfig(pushService *services.PushService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := c.Get("user_id")
+		userID, exists := c.Get("userID")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 			return
@@ -193,7 +193,7 @@ func DeletePushConfig(pushService *services.PushService) gin.HandlerFunc {
 // TestPushConfig 测试推送配置
 func TestPushConfig(pushService *services.PushService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := c.Get("user_id")
+		userID, exists := c.Get("userID")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 			return
@@ -217,7 +217,7 @@ func TestPushConfig(pushService *services.PushService) gin.HandlerFunc {
 // GetPushLogs 获取推送日志
 func GetPushLogs(pushService *services.PushService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := c.Get("user_id")
+		userID, exists := c.Get("userID")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 			return
@@ -265,7 +265,7 @@ func GetPushLogs(pushService *services.PushService) gin.HandlerFunc {
 // GetPushStats 获取推送统计
 func GetPushStats(pushService *services.PushService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := c.Get("user_id")
+		userID, exists := c.Get("userID")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 			return

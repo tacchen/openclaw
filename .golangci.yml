@@ -1,0 +1,162 @@
+# golangci-lint 配置文件
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  # 运行超时时间
+  timeout: 5m
+
+  # 并发数
+  concurrency: 4
+
+  # 检查的 Go 版本
+  go: "1.21"
+
+  # 跳过的目录
+  skip-dirs:
+    - vendor
+    - third_party
+    - testdata
+    - examples
+    - Godeps
+    - builtin
+
+  # 跳过的文件
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+
+# 启用的 Linters
+linters:
+  enable:
+    # 默认启用的 linters
+    - bodyclose      # 检查 http.Response.Body 是否关闭
+    - deadcode       # 查找未使用的代码
+    - errcheck       # 检查错误是否处理
+    - gosimple       # 简化代码
+    - govet          # Go vet 静态分析
+    - ineffassign    # 检查无效的赋值
+    - staticcheck    # 静态分析
+    - typecheck      # 类型检查
+    - unused        # 检查未使用的常量、变量、函数和类型
+
+    # 默认未启用的 linters
+    - gofmt          # 格式检查
+    - goimports      # import 排序
+    - misspell       # 拼写检查
+    - prealloc       # 预分配切片
+    - revive         # 代码风格检查
+    - unconvert      # 移除不必要的类型转换
+    - unparam        # 检查未使用的函数参数
+
+  # 禁用的 linters
+  disable:
+    - exhaustivestruct # 检查结构体字段是否显式初始化（太严格）
+    - gochecknoglobals # 检查全局变量（测试代码需要）
+    - gocritic        # 启用了太多规则，太严格
+    - godox           # 检查 TODO/FIXME（暂时禁用）
+    - wsl             # 空行检查（风格问题）
+    - funlen          # 函数长度检查（可以容忍长函数）
+    - gocyclo         # 圈复杂度检查（暂时禁用）
+    - gomnd           # 魔数检查（暂时禁用）
+    - lll             # 行长度检查（允许长行）
+
+# Linters 配置
+linters-settings:
+  errcheck:
+    # 报告未检查的错误
+    check-type-assertions: true
+    check-blank: false
+
+  gofmt:
+    # 格式化代码
+    simplify: true
+
+  goimports:
+    # import 排序
+    local-prefixes: rss-reader
+
+  govet:
+    # 检查 shadowing
+    check-shadowing: true
+
+  misspell:
+    # 拼写检查
+    locale: US
+
+  revive:
+    # 代码风格检查
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: package-comments
+        disabled: false
+
+  prealloc:
+    # 预分配切片
+    simple: true
+    range-loops: true
+    for-loops: false
+
+  staticcheck:
+    # 静态分析检查
+    checks: ["all"]
+
+# 问题配置
+issues:
+  # 最大相同问题数量
+  max-same-issues: 0
+
+  # 最大问题数量
+  max-issues-per-linter: 0
+
+  # 排除规则
+  exclude-rules:
+    # 测试文件可以忽略一些问题
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gocyclo
+        - gosec
+
+    # main 函数可以忽略一些问题
+    - path: cmd/
+      linters:
+        - gochecknoinits
+        - gochecknoglobals
+
+    # 忽略 context 的 warning
+    - linters:
+        - staticcheck
+      text: "SA1019:"
+
+  # 显示所有问题
+  exclude-use-default: false
+
+# 输出配置
+output:
+  # 输出格式: colored-line-number|line-number|json|tab|checkstyle|code-climate
+  format: colored-line-number
+
+  # 打印问题代码行
+  print-issued-lines: true
+
+  # 打印问题位置
+  print-linter-name: true
+
+  # 按字母顺序排序
+  sort-results: true
+
+# 性能配置
+performance:
+  # 分析的内存使用
+  # 启用后可能需要更多内存
+  enabled: true

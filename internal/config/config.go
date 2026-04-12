@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Port        string
-	DatabaseURL string
-	JWTSecret   string
+	Port             string
+	DatabaseURL      string
+	JWTSecret        string
+	FeishuWebhookURL string
 }
 
 func Load() *Config {
@@ -20,9 +21,10 @@ func Load() *Config {
 	}
 
 	return &Config{
-		Port:        getEnv("PORT", "8080"),
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://postgres:postgres@db:5432/rss?sslmode=disable"),
-		JWTSecret:   getEnv("JWT_SECRET", "your-secret-key-change-in-production"),
+		Port:             getEnv("PORT", "8080"),
+		DatabaseURL:      getEnv("DATABASE_URL", "postgres://postgres:postgres@db:5432/rss?sslmode=disable"),
+		JWTSecret:        getEnv("JWT_SECRET", "your-secret-key-change-in-production"),
+		FeishuWebhookURL: getEnv("FEISHU_WEBHOOK_URL", ""),
 	}
 }
 
