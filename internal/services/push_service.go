@@ -19,10 +19,11 @@ type PushService struct {
 
 // NewPushService 创建推送服务
 func NewPushService(db *gorm.DB, feishuClient *FeishuClient) *PushService {
-	return &PushService{
-		db:           db,
+	ps := &PushService{
 		feishuClient: feishuClient,
 	}
+	ps.db = db
+	return ps
 }
 
 // CreateConfig 创建用户推送配置
