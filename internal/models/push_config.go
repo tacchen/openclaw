@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Int64Array 自定义类型，用于 PostgreSQL 整数数组
@@ -24,12 +26,10 @@ func (a *Int64Array) Scan(value interface{}) error {
 		*a = nil
 		return nil
 	}
-
 	bytes, ok := value.([]byte)
 	if !ok {
 		return errors.New("type assertion to []byte failed")
 	}
-
 	return json.Unmarshal(bytes, a)
 }
 
@@ -38,8 +38,8 @@ type PushConfig struct {
 	ID             uint       `gorm:"primarykey" json:"id"`
 	UserID         uint       `gorm:"not null;uniqueIndex:idx_user_config" json:"user_id"`
 	WebhookURL     string     `gorm:"not null" json:"webhook_url"`
-	Frequency      string     `gorm:"not null;default:'daily'" json:"frequency"` // daily, weekly, monthly
-	PushTime       string     `gorm:"not null;default:'09:00'" json:"push_time"` // HH:MM format
+	Frequency      string     `gorm:"not null;default:'daily'" json:"frequency"`
+	PushTime       string     `gorm:"not null;default:'09:00'" json:"push_time"`
 	MinUnreadCount int        `gorm:"default:1" json:"min_unread_count"`
 	FeedIDs        Int64Array `gorm:"type:jsonb" json:"feed_ids,omitempty"`
 	CategoryIDs    Int64Array `gorm:"type:jsonb" json:"category_ids,omitempty"`
