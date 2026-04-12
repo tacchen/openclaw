@@ -67,7 +67,7 @@ func CreatePushConfig(pushService *services.PushService) gin.HandlerFunc {
 			copy(modelsConfig.CategoryIDs, req.CategoryIDs)
 		}
 
-		if err := pushService.CreateConfig(userID.(int), modelsConfig); err != nil {
+		if err := pushService.CreateConfig(userID.(uint), modelsConfig); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -85,7 +85,7 @@ func GetPushConfigs(pushService *services.PushService) gin.HandlerFunc {
 			return
 		}
 
-		configs, err := pushService.GetConfigs(userID.(int))
+		configs, err := pushService.GetConfigs(userID.(uint))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -110,7 +110,7 @@ func GetPushConfig(pushService *services.PushService) gin.HandlerFunc {
 			return
 		}
 
-		config, err := pushService.GetConfig(userID.(int), configID)
+		config, err := pushService.GetConfig(userID.(uint), configID)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Config not found"})
 			return
@@ -157,7 +157,7 @@ func UpdatePushConfig(pushService *services.PushService) gin.HandlerFunc {
 			copy(updates.CategoryIDs, req.CategoryIDs)
 		}
 
-		if err := pushService.UpdateConfig(userID.(int), configID, updates); err != nil {
+		if err := pushService.UpdateConfig(userID.(uint), configID, updates); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -181,7 +181,7 @@ func DeletePushConfig(pushService *services.PushService) gin.HandlerFunc {
 			return
 		}
 
-		if err := pushService.DeleteConfig(userID.(int), configID); err != nil {
+		if err := pushService.DeleteConfig(userID.(uint), configID); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -205,7 +205,7 @@ func TestPushConfig(pushService *services.PushService) gin.HandlerFunc {
 			return
 		}
 
-		if err := pushService.TestConfig(userID.(int), configID); err != nil {
+		if err := pushService.TestConfig(userID.(uint), configID); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -246,7 +246,7 @@ func GetPushLogs(pushService *services.PushService) gin.HandlerFunc {
 			filter["end_date"] = endDate
 		}
 
-		logs, total, err := pushService.GetPushLogs(userID.(int), filter, page, pageSize)
+		logs, total, err := pushService.GetPushLogs(userID.(uint), filter, page, pageSize)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -278,7 +278,7 @@ func GetPushStats(pushService *services.PushService) gin.HandlerFunc {
 		}
 
 		// 验证配置所有权
-		_, err = pushService.GetConfig(userID.(int), configID)
+		_, err = pushService.GetConfig(userID.(uint), configID)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Config not found"})
 			return
