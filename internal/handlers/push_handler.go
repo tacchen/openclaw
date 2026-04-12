@@ -92,7 +92,7 @@ func GetPushConfigs(pushService *services.PushService) gin.HandlerFunc {
 			return
 		}
 
-		configs, err := pushService.GetConfigs(userID.(uint))
+		configs, err := pushService.GetConfigs(userIDUint)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
