@@ -67,6 +67,8 @@ func main() {
 	if feishuClient != nil {
 		pushService = services.NewPushService(database, feishuClient)
 		log.Println("Push service initialized")
+	} else {
+		log.Println("Warning: Feishu webhook not configured, push service disabled")
 	}
 
 	if openaiService == nil {
