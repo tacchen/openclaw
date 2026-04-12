@@ -38,10 +38,9 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Auto migrate (skip existing tables)
-	// Only migrate new tables
-	if err := database.AutoMigrate(&models.PushConfig{}, &models.PushLog{}); err != nil {
-		log.Fatalf("Failed to migrate push tables: %v", err)
+	// Auto migrate all tables
+	if err := database.AutoMigrate(&models.User{}, &models.Feed{}, &models.Article{}, &models.Tag{}, &models.ArticleTag{}, &models.PushConfig{}, &models.PushLog{}); err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
 	}
 
 	// Initialize repositories
