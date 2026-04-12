@@ -125,7 +125,7 @@ func main() {
 	}))
 
 	// Serve frontend static files
-	r.Static("/assets", "./frontend/assets")
+	r.Static("/assets", "./frontend/dist/assets")
 
 	// API routes
 	api := r.Group("/api")
@@ -189,7 +189,7 @@ func main() {
 			return
 		}
 		// 其他路径返回 index.html（SPA 路由）
-		c.File("./frontend/index.html")
+		c.File("./frontend/dist/index.html")
 	})
 
 	// Start server
