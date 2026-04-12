@@ -80,7 +80,7 @@ func main() {
 		rssService.FetchAllFeeds()
 	})
 	
-	// Setup cron for daily summary (每天 9:00 汇总推送）
+	// Setup cron for daily summary
 	if pushService != nil {
 		c.AddFunc("0 9 * * *", func() {
 			log.Println("Sending daily summary...")
