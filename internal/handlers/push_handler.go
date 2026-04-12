@@ -58,11 +58,11 @@ func CreatePushConfig(pushService *services.PushService) gin.HandlerFunc {
 			MinUnreadCount: req.MinUnreadCount,
 		}
 		// 将数组类型复制
-		if req.FeedIDs != nil {
+		if req.FeedIDs != nil && len(req.FeedIDs) > 0 {
 			modelsConfig.FeedIDs = make([]int64, len(req.FeedIDs))
 			copy(modelsConfig.FeedIDs, req.FeedIDs)
 		}
-		if req.CategoryIDs != nil {
+		if req.CategoryIDs != nil && len(req.CategoryIDs) > 0 {
 			modelsConfig.CategoryIDs = make([]int64, len(req.CategoryIDs))
 			copy(modelsConfig.CategoryIDs, req.CategoryIDs)
 		}
