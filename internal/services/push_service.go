@@ -31,6 +31,14 @@ func (s *PushService) CreateConfig(userID uint, config *models.PushConfig) error
 	config.CreatedAt = time.Now()
 	config.UpdatedAt = time.Now()
 
+	// Initialize nil arrays to empty slices
+	if config.FeedIDs == nil {
+		config.FeedIDs = []int64{}
+	}
+	if config.CategoryIDs == nil {
+		config.CategoryIDs = []int64{}
+	}
+
 	// 验证频率
 	validFrequencies := map[string]bool{"daily": true, "weekly": true, "monthly": true}
 	if !validFrequencies[config.Frequency] {
