@@ -19,6 +19,11 @@ RUN npm run build
 # Runtime stage
 FROM alpine:3.19
 
+# Install timezone data
+RUN apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
+
 WORKDIR /app
 COPY --from=builder /app/rss-reader .
 RUN mkdir -p frontend
