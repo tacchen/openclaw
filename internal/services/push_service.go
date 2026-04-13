@@ -222,7 +222,13 @@ func (s *PushService) GetStats(configID int, from, to time.Time) (*PushStats, er
 func (s *PushService) ProcessDailyPushes() error {
 	// 查询所有每日推送配置
 	var configs []models.PushConfig
-	now := time.Now()
+
+	// 使用北京时间（Asia/Shanghai）
+	beijingTime, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		return fmt.Errorf("failed to load Beijing timezone: %w", err)
+	}
+	now := time.Now().In(beijingTime)
 	currentTime := now.Format("15:04")
 
 	if err := s.db.Where("frequency = ? AND push_time = ?", "daily", currentTime).Find(&configs).Error; err != nil {
@@ -254,8 +260,12 @@ func (s *PushService) ProcessWeeklyPushes() error {
 		return fmt.Errorf("query weekly configs error: %w", err)
 	}
 
-	// 过滤出今天应该推送的配置
-	now := time.Now()
+	// 使用北京时间（Asia/Shanghai）
+	beijingTime, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		return fmt.Errorf("failed to load Beijing timezone: %w", err)
+	}
+	now := time.Now().In(beijingTime)
 	currentTime := now.Format("15:04")
 	weekday := int(now.Weekday()) // Sunday = 0, Monday = 1, etc.
 
