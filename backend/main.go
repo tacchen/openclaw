@@ -8,7 +8,6 @@ import (
 
 	"rss-reader/internal/config"
 	"rss-reader/internal/handlers"
-	"rss-reader/internal/models"
 	"rss-reader/internal/repository"
 	"rss-reader/internal/schedulers"
 	"rss-reader/internal/services"
@@ -38,8 +37,18 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Skip AutoMigrate for now - tables already exist
-	log.Println("AutoMigrate skipped - tables already exist")
+	// AutoMigrate database schema
+	if err := database.AutoMigrate(
+		&models.User{},
+		&models.Feed{},
+		&models.Article{},
+		&models.Tag{},
+		&models.PushConfig{},
+		&models.PushLog{},
+	); err != nil {
+		log.Fatalf("Failed to auto migrate: %v", err)
+	}
+	log.Println("Database schema migrated successfully")
 
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(database)
