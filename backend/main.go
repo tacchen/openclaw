@@ -30,7 +30,7 @@ func main() {
 	}
 
 	// Connect to database
-	database, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{
+database, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
