@@ -77,5 +77,5 @@ type PushLog struct {
 	ArticleCount int       `gorm:"not null" json:"article_count"`
 	Message      string    `gorm:"type:text" json:"message,omitempty"`
 	ErrorMessage string    `gorm:"type:text" json:"error_message,omitempty"`
-	SentAt       time.Time `gorm:"autoCreateTime" json:"sent_at"`
+	SentAt       time.Time `gorm:"column:sent_at;default:CURRENT_TIMESTAMP" json:"sent_at"`
 }
