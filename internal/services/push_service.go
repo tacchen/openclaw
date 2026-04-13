@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -301,8 +302,7 @@ func (s *PushService) ProcessWeeklyPushes() error {
 
 // processConfig 处理单个配置的推送
 func (s *PushService) processConfig(config *models.PushConfig) error {
-	// 查询未读文章
-	var articles []models.Article
+	// 构建查询条件
 	query := s.db.Where("user_id = ? AND is_read = false", config.UserID)
 
 	// 应用订阅源过滤
@@ -319,16 +319,28 @@ func (s *PushService) processConfig(config *models.PushConfig) error {
 
 	// 检查最小未读数
 	var totalCount int64
-	query.Count(&totalCount)
+	countQuery := s.db.Model(&models.Article{}).Where("user_id = ? AND is_read = false", config.UserID)
+	if len(config.FeedIDs) > 0 {
+		countQuery = countQuery.Where("feed_id IN ?", config.FeedIDs)
+	}
+	if len(config.CategoryIDs) > 0 {
+		countQuery = countQuery.Joins("JOIN feeds ON feeds.id = articles.feed_id").
+			Where("feeds.category IN ?", s.getCategoriesFromIDs(config.CategoryIDs))
+	}
+	countQuery.Count(&totalCount)
+	log.Printf("[Push Debug] UserID=%d, ConfigID=%d, FeedIDs=%v, CategoryIDs=%v, UnreadCount=%d, MinRequired=%d",
+		config.UserID, config.ID, config.FeedIDs, config.CategoryIDs, totalCount, config.MinUnreadCount)
+
 	if totalCount < int64(config.MinUnreadCount) {
 		return fmt.Errorf("not enough unread articles: %d (min: %d)", totalCount, config.MinUnreadCount)
 	}
 
-	// 限制文章数量（避免消息过大）
-	query = query.Order("pub_date DESC").Limit(config.MaxArticleCount)
-	if err := query.Find(&articles).Error; err != nil {
+	// 查询文章
+	var articles []models.Article
+	if err := query.Order("pub_date DESC").Limit(config.MaxArticleCount).Find(&articles).Error; err != nil {
 		return fmt.Errorf("query articles error: %w", err)
 	}
+	log.Printf("[Push Debug] Found %d articles for user %d", len(articles), config.UserID)
 
 	// 发送推送
 	message := s.formatPushMessage(articles)
