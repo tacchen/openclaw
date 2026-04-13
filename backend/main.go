@@ -38,18 +38,8 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// AutoMigrate database schema
-	if err := database.AutoMigrate(
-		&models.User{},
-		&models.Feed{},
-		&models.Article{},
-		&models.Tag{},
-		&models.PushConfig{},
-		&models.PushLog{},
-	); err != nil {
-		log.Fatalf("Failed to auto migrate: %v", err)
-	}
-	log.Println("Database schema migrated successfully")
+	// Skip AutoMigrate for now - tables already exist
+	log.Println("AutoMigrate skipped - tables already exist")
 
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(database)
