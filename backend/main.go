@@ -44,6 +44,12 @@ database, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{
 		&models.Feed{},
 		&models.Article{},
 		&models.Tag{},
+		// AutoMigrate database schema
+	if err := database.AutoMigrate(
+		&models.User{},
+		&models.Feed{},
+		&models.Article{},
+		&models.Tag{},
 		&models.PushConfig{},
 		&models.PushLog{},
 	); err != nil {
