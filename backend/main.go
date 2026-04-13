@@ -45,14 +45,7 @@ database, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{
 		&models.Article{},
 		&models.Tag{},
 		// AutoMigrate database schema
-	if err := database.AutoMigrate(
-		&models.User{},
-		&models.Feed{},
-		&models.Article{},
-		&models.Tag{},
-		&models.PushConfig{},
-		&models.PushLog{},
-	); err != nil {
+	if err := database.AutoMigrate(&models.User{}, &models.Feed{}, &models.Article{}, &models.Tag{}, &models.PushConfig{}, &models.PushLog{}); err != nil {
 		log.Fatalf("Failed to auto migrate: %v", err)
 	}
 	log.Println("Database schema migrated successfully")
