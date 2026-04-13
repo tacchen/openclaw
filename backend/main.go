@@ -8,6 +8,7 @@ import (
 
 	"rss-reader/internal/config"
 	"rss-reader/internal/handlers"
+	"rss-reader/internal/models"
 	"rss-reader/internal/repository"
 	"rss-reader/internal/schedulers"
 	"rss-reader/internal/services"
