@@ -39,15 +39,14 @@ func main() {
 	}
 
 	// AutoMigrate database schema
-	models := []interface{}{
+	if err := database.AutoMigrate(
 		&models.User{},
 		&models.Feed{},
 		&models.Article{},
 		&models.Tag{},
 		&models.PushConfig{},
 		&models.PushLog{},
-	}
-	if err := database.AutoMigrate(models...); err != nil {
+	); err != nil {
 		log.Fatalf("Failed to auto migrate: %v", err)
 	}
 	log.Println("Database schema migrated successfully")
