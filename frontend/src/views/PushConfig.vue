@@ -1,45 +1,63 @@
 <template>
   <div class="push-config-page">
+    <!-- Page Header -->
     <div class="page-header">
+      <button class="btn btn-back" @click="goBack">← 返回</button>
       <h1>推送配置</h1>
-      <button class="btn btn-primary" @click="showCreateDialog = true">新建配置</button>
+      <button class="btn btn-primary" @click="showCreateDialog = true" v-if="!config">新建配置</button>
     </div>
 
+    <!-- Loading -->
     <div v-if="loading" class="loading">加载中...</div>
+
+    <!-- Config Card -->
     <div v-else-if="config" class="config-card">
       <div class="config-header">
         <h3>当前配置</h3>
-        <button class="btn btn-sm" @click="editConfig">编辑</button>
-        <button class="btn btn-sm btn-danger" @click="deleteConfig">删除</button>
+        <div class="config-actions">
+          <button class="btn btn-sm btn-secondary" @click="editConfig">编辑</button>
+          <button class="btn btn-sm btn-danger" @click="deleteConfig">删除</button>
+        </div>
       </div>
       <div class="config-details">
         <div class="config-item">
-          <label>推送频率：</label>
-          <span>{{ config.frequency }}</span>
+          <label>Webhook URL</label>
+          <span class="config-value config-webhook">{{ config.webhook_url }}</span>
         </div>
         <div class="config-item">
-          <label>推送时间：</label>
-          <span>{{ config.push_time }}</span>
+          <label>推送频率</label>
+          <span class="config-value">{{ frequencyLabel }}</span>
         </div>
         <div class="config-item">
-          <label>最小未读数：</label>
-          <span>{{ config.min_unread_count }}</span>
+          <label>推送时间</label>
+          <span class="config-value">{{ config.push_time }}</span>
         </div>
         <div class="config-item">
-          <label>订阅源过滤：</label>
-          <span>{{ config.feed_ids?.length || 0 }} 个</span>
+          <label>最小未读数</label>
+          <span class="config-value">{{ config.min_unread_count }}</span>
         </div>
         <div class="config-item">
-          <label>分类过滤：</label>
-          <span>{{ config.category_ids?.length || 0 }} 个</span>
+          <label>订阅源过滤</label>
+          <span class="config-value">{{ config.feed_ids?.length || 0 }} 个</span>
+        </div>
+        <div class="config-item">
+          <label>分类过滤</label>
+          <span class="config-value">{{ config.category_ids?.length || 0 }} 个</span>
+        </div>
+        <div class="config-item" v-if="config.last_push_at">
+          <label>上次推送</label>
+          <span class="config-value">{{ formatDateTime(config.last_push_at) }}</span>
         </div>
       </div>
       <div class="config-actions">
-        <button class="btn btn-secondary" @click="testPush">测试推送</button>
+        <button class="btn btn-secondary" @click="testPush">📨 测试推送</button>
       </div>
     </div>
+
+    <!-- No Config -->
     <div v-else class="no-config">
-      <p>暂无推送配置，点击"新建配置"创建一个</p>
+      <p>暂无推送配置</p>
+      <button class="btn btn-primary" @click="showCreateDialog = true">创建配置</button>
     </div>
 
     <!-- Create/Edit Dialog -->
@@ -48,11 +66,12 @@
         <h2>{{ showEditDialog ? '编辑配置' : '新建配置' }}</h2>
         <form @submit.prevent="saveConfig">
           <div class="form-group">
-            <label>Webhook URL</label>
-            <input type="url" v-model="formData.webhook_url" required />
+            <label>Webhook URL <span class="required">*</span></label>
+            <input type="url" v-model="formData.webhook_url" required placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/xxx" />
+            <small class="form-hint">飞书机器人 Webhook URL</small>
           </div>
           <div class="form-group">
-            <label>推送频率</label>
+            <label>推送频率 <span class="required">*</span></label>
             <select v-model="formData.frequency" required>
               <option value="daily">每日</option>
               <option value="weekly">每周</option>
@@ -60,12 +79,14 @@
             </select>
           </div>
           <div class="form-group">
-            <label>推送时间</label>
+            <label>推送时间 <span class="required">*</span></label>
             <input type="time" v-model="formData.push_time" required />
+            <small class="form-hint">推送时间（24 小时制，如 09:00）</small>
           </div>
           <div class="form-group">
             <label>最小未读数</label>
             <input type="number" v-model="formData.min_unread_count" min="0" />
+            <small class="form-hint">只有当未读文章数量达到此值时才推送</small>
           </div>
           <div class="form-actions">
             <button type="button" class="btn btn-secondary" @click="closeDialog">取消</button>
@@ -78,7 +99,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -96,6 +117,33 @@ const formData = ref({
   min_unread_count: 1
 })
 
+const frequencyLabel = computed(() => {
+  if (!config.value) return ''
+  const labels = {
+    daily: '每日',
+    weekly: '每周',
+    monthly: '每月'
+  }
+  return labels[config.value.frequency] || config.value.frequency
+})
+
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+}
+
+const goBack = () => {
+  router.push('/')
+}
+
 const fetchConfig = async () => {
   loading.value = true
   try {
@@ -109,6 +157,7 @@ const fetchConfig = async () => {
     }
   } catch (error) {
     console.error('获取配置失败:', error)
+    alert('获取配置失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -139,9 +188,14 @@ const saveConfig = async () => {
     if (response.ok) {
       closeDialog()
       await fetchConfig()
+      alert('保存成功')
+    } else {
+      const error = await response.json()
+      alert(error.error || '保存失败，请稍后重试')
     }
   } catch (error) {
     console.error('保存配置失败:', error)
+    alert('保存失败，请稍后重试')
   }
 }
 
@@ -157,13 +211,19 @@ const deleteConfig = async () => {
 
     if (response.ok) {
       config.value = null
+      alert('删除成功')
+    } else {
+      alert('删除失败，请稍后重试')
     }
   } catch (error) {
     console.error('删除配置失败:', error)
+    alert('删除失败，请稍后重试')
   }
 }
 
 const testPush = async () => {
+  if (!config.value?.id) return
+
   try {
     const token = localStorage.getItem('token')
     const response = await fetch(`/api/push-configs/${config.value.id}/test`, {
@@ -172,11 +232,14 @@ const testPush = async () => {
     })
 
     if (response.ok) {
-      alert('测试推送成功')
+      alert('✅ 测试推送成功，请检查飞书消息')
+    } else {
+      const error = await response.json()
+      alert('❌ 测试推送失败：' + (error.error || '未知错误'))
     }
   } catch (error) {
     console.error('测试推送失败:', error)
-    alert('测试推送失败')
+    alert('❌ 测试推送失败，请稍后重试')
   }
 }
 
@@ -198,135 +261,47 @@ onMounted(() => {
 
 <style scoped>
 .push-config-page {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 20px;
 }
 
+/* Page Header */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+  gap: 16px;
 }
 
 .page-header h1 {
   margin: 0;
   font-size: 24px;
+  flex: 1;
 }
 
-.loading {
-  text-align: center;
-  padding: 40px;
-}
-
-.config-card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 20px;
-}
-
-.config-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid var(--border);
-}
-
-.config-header h3 {
-  margin: 0;
-}
-
-.config-details {
-  margin-bottom: 20px;
-}
-
-.config-item {
-  display: flex;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.config-item:last-child {
-  border-bottom: none;
-}
-
-.config-item label {
-  width: 120px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.config-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.no-config {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--text-secondary);
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: var(--bg-primary);
-  border-radius: var(--radius-md);
-  padding: 20px;
-  max-width: 500px;
-  width: 90%;
-}
-
-.modal h2 {
-  margin: 0 0 20px 0;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-primary);
-  color: var(--text-primary);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-}
-
+/* Buttons */
 .btn {
-  padding: 8px 16px;
+  padding: 10px 20px;
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 500;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-back {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .btn-primary {
@@ -345,7 +320,209 @@ onMounted(() => {
 }
 
 .btn-sm {
-  padding: 4px 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+/* Config Card */
+.config-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.config-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.config-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Config Details */
+.config-details {
+  margin-bottom: 24px;
+}
+
+.config-item {
+  display: flex;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+.config-item:last-child {
+  border-bottom: none;
+}
+
+.config-item label {
+  width: 140px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.config-value {
+  flex: 1;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.config-webhook {
+  font-family: monospace;
+  font-size: 13px;
+  word-break: break-all;
+  color: var(--text-muted);
+}
+
+.required {
+  color: var(--danger);
+  margin-left: 4px;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 4px;
   font-size: 12px;
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+/* No Config */
+.no-config {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-secondary);
+}
+
+.no-config p {
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  max-width: 520px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal h2 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .push-config-page {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .page-header h1 {
+    font-size: 20px;
+    text-align: center;
+  }
+
+  .config-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .config-actions {
+    justify-content: flex-end;
+  }
+
+  .config-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .config-item label {
+    width: auto;
+  }
+
+  .modal {
+    padding: 20px;
+  }
 }
 </style>
