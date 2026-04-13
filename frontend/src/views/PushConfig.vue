@@ -37,6 +37,10 @@
           <span class="config-value">{{ config.min_unread_count }}</span>
         </div>
         <div class="config-item">
+          <label>最多推送文章数</label>
+          <span class="config-value">{{ config.max_article_count }}</span>
+        </div>
+        <div class="config-item">
           <label>订阅源过滤</label>
           <span class="config-value">{{ config.feed_ids?.length || 0 }} 个</span>
         </div>
@@ -88,6 +92,11 @@
             <input type="number" v-model="formData.min_unread_count" min="0" />
             <small class="form-hint">只有当未读文章数量达到此值时才推送</small>
           </div>
+          <div class="form-group">
+            <label>最多推送文章数</label>
+            <input type="number" v-model="formData.max_article_count" min="1" max="50" />
+            <small class="form-hint">每次推送最多包含的文章数量（1-50）</small>
+          </div>
           <div class="form-actions">
             <button type="button" class="btn btn-secondary" @click="closeDialog">取消</button>
             <button type="submit" class="btn btn-primary">保存</button>
@@ -114,7 +123,8 @@ const formData = ref({
   webhook_url: '',
   frequency: 'daily',
   push_time: '09:00',
-  min_unread_count: 1
+  min_unread_count: 1,
+  max_article_count: 10
 })
 
 const frequencyLabel = computed(() => {
@@ -250,7 +260,8 @@ const closeDialog = () => {
     webhook_url: '',
     frequency: 'daily',
     push_time: '09:00',
-    min_unread_count: 1
+    min_unread_count: 1,
+    max_article_count: 10
   }
 }
 

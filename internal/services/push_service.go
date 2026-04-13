@@ -315,7 +315,7 @@ func (s *PushService) processConfig(config *models.PushConfig) error {
 	}
 
 	// 限制文章数量（避免消息过大）
-	query = query.Order("pub_date DESC").Limit(20)
+	query = query.Order("pub_date DESC").Limit(config.MaxArticleCount)
 	if err := query.Find(&articles).Error; err != nil {
 		return fmt.Errorf("query articles error: %w", err)
 	}

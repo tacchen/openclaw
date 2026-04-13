@@ -60,6 +60,7 @@ type PushConfig struct {
 	Frequency      string     `gorm:"not null;default:'daily'" json:"frequency"`
 	PushTime       string     `gorm:"not null;default:'09:00'" json:"push_time"`
 	MinUnreadCount int        `gorm:"default:1" json:"min_unread_count"`
+	MaxArticleCount int        `gorm:"default:10" json:"max_article_count"`
 	FeedIDs        []int64    `gorm:"type:jsonb" json:"feed_ids,omitempty"`
 	CategoryIDs    []int64    `gorm:"type:jsonb" json:"category_ids,omitempty"`
 	LastPushAt     *time.Time `json:"last_push_at,omitempty"`
