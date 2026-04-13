@@ -37,9 +37,11 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Skip AutoMigrate due to GORM issue with User model
-	// Tables already exist, so this should be OK
-	log.Println("AutoMigrate skipped due to GORM compatibility issue")
+	// AutoMigrate database schema
+	if err := database.AutoMigrate(&models.User{}, &models.Feed{}, &models.Article{}, &models.Tag{}, &models.PushConfig{}, &models.PushLog{}); err != nil {
+		log.Fatalf("Failed to auto migrate: %v", err)
+	}
+	log.Println("Database schema migrated successfully")
 
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(database)
