@@ -139,7 +139,7 @@
               <span>📡</span>
               <span>订阅源管理</span>
             </div>
-            <div class="menu-item" @click="goToPushConfig; showUserMenu = false">
+            <div class="menu-item" @click="goToPushConfig">
               <span>🔔</span>
               <span>推送配置</span>
             </div>
@@ -1012,6 +1012,7 @@ function logout() {
 
 const goToPushConfig = () => {
   router.push('/push-config')
+  showUserMenu.value = false
 }
 
 
