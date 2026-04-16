@@ -28,11 +28,11 @@
           <label>推送频率</label>
           <span class="config-value">{{ frequencyLabel }}</span>
         </div>
-        <div class="config-item">
+        <div class="config-item" v-if="config.frequency !== 'immediate'">
           <label>推送时间</label>
           <span class="config-value">{{ config.push_time }}</span>
         </div>
-        <div class="config-item">
+        <div class="config-item" v-if="config.frequency !== 'immediate'">
           <label>最小未读数</label>
           <span class="config-value">{{ config.min_unread_count }}</span>
         </div>
@@ -76,18 +76,19 @@
           </div>
           <div class="form-group">
             <label>推送频率 <span class="required">*</span></label>
-            <select v-model="formData.frequency" required>
-              <option value="daily">每日</option>
-              <option value="weekly">每周</option>
-              <option value="monthly">每月</option>
+            <select v-model="formData.frequency" required @change="handleFrequencyChange">
+              <option value="immediate">即时（新文章立即推送）</option>
+              <option value="daily">每日汇总</option>
+              <option value="weekly">每周汇总</option>
+              <option value="monthly">每月汇总</option>
             </select>
           </div>
-          <div class="form-group">
+          <div class="form-group" v-if="formData.frequency !== 'immediate'">
             <label>推送时间 <span class="required">*</span></label>
             <input type="time" v-model="formData.push_time" required />
             <small class="form-hint">推送时间（24 小时制，如 09:00）</small>
           </div>
-          <div class="form-group">
+          <div class="form-group" v-if="formData.frequency !== 'immediate'">
             <label>最小未读数</label>
             <input type="number" v-model="formData.min_unread_count" min="0" />
             <small class="form-hint">只有当未读文章数量达到此值时才推送</small>
@@ -130,9 +131,10 @@ const formData = ref({
 const frequencyLabel = computed(() => {
   if (!config.value) return ''
   const labels = {
-    daily: '每日',
-    weekly: '每周',
-    monthly: '每月'
+    immediate: '即时推送',
+    daily: '每日汇总',
+    weekly: '每周汇总',
+    monthly: '每月汇总'
   }
   return labels[config.value.frequency] || config.value.frequency
 })
@@ -177,6 +179,14 @@ const editConfig = () => {
   if (config.value) {
     formData.value = { ...config.value }
     showEditDialog.value = true
+  }
+}
+
+const handleFrequencyChange = () => {
+  // 当切换到即时推送时，重置推送时间和最小未读数
+  if (formData.value.frequency === 'immediate') {
+    formData.value.push_time = '09:00'
+    formData.value.min_unread_count = 1
   }
 }
 

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"rss-reader/internal/models"
@@ -42,14 +41,16 @@ func (s *PushService) CreateConfig(userID uint, config *models.PushConfig) error
 	}
 
 	// 验证频率
-	validFrequencies := map[string]bool{"daily": true, "weekly": true, "monthly": true}
+	validFrequencies := map[string]bool{"immediate": true, "daily": true, "weekly": true, "monthly": true}
 	if !validFrequencies[config.Frequency] {
 		return fmt.Errorf("invalid frequency: %s", config.Frequency)
 	}
 
-	// 验证推送时间格式
-	if _, err := time.Parse("15:04", config.PushTime); err != nil {
-		return fmt.Errorf("invalid push time format: %s (expected HH:MM)", config.PushTime)
+	// 验证推送时间格式（非即时推送需要）
+	if config.Frequency != "immediate" {
+		if _, err := time.Parse("15:04", config.PushTime); err != nil {
+			return fmt.Errorf("invalid push time format: %s (expected HH:MM)", config.PushTime)
+		}
 	}
 
 	// 验证最小未读数
@@ -87,14 +88,14 @@ func (s *PushService) UpdateConfig(userID uint, configID int, updates *models.Pu
 
 	// 验证频率
 	if updates.Frequency != "" {
-		validFrequencies := map[string]bool{"daily": true, "weekly": true, "monthly": true}
+		validFrequencies := map[string]bool{"immediate": true, "daily": true, "weekly": true, "monthly": true}
 		if !validFrequencies[updates.Frequency] {
 			return fmt.Errorf("invalid frequency: %s", updates.Frequency)
 		}
 	}
 
-	// 验证推送时间格式
-	if updates.PushTime != "" {
+	// 验证推送时间格式（非即时推送需要）
+	if updates.PushTime != "" && updates.Frequency != "immediate" {
 		if _, err := time.Parse("15:04", updates.PushTime); err != nil {
 			return fmt.Errorf("invalid push time format: %s (expected HH:MM)", updates.PushTime)
 		}
@@ -130,9 +131,19 @@ func (s *PushService) TestConfig(userID uint, configID int) error {
 
 	// 创建临时 FeishuClient
 	testClient := NewFeishuClient(config.WebhookURL)
-	message := "🔔 推送配置测试\n\n这是一条测试消息，如果您收到此消息，说明推送配置正常。"
 
-	return testClient.SendTextMessage(message)
+	// 发送测试卡片
+	summaryArticles := []SummaryArticle{
+		{
+			Title:       "测试文章标题",
+			Link:        "https://example.com",
+			FeedName:    "测试订阅源",
+			PubDate:     time.Now().Format("2006-01-02 15:04"),
+			Description: "这是一条测试消息，如果您收到此卡片，说明推送配置正常。",
+		},
+	}
+
+	return testClient.SendSummaryCard(summaryArticles)
 }
 
 // LogPush 记录推送日志
@@ -300,10 +311,94 @@ func (s *PushService) ProcessWeeklyPushes() error {
 	return nil
 }
 
+// SendImmediatePush 发送实时推送（新文章）
+func (s *PushService) SendImmediatePush(article *models.Article) error {
+	// 查询所有实时推送配置
+	var configs []models.PushConfig
+	if err := s.db.Where("frequency = ?", "immediate").Find(&configs).Error; err != nil {
+		return fmt.Errorf("query immediate configs error: %w", err)
+	}
+
+	// 处理每个配置
+	for _, config := range configs {
+		// 检查用户 ID 是否匹配
+		if config.UserID != article.UserID {
+			continue
+		}
+
+		// 检查订阅源过滤
+		if len(config.FeedIDs) > 0 {
+			matched := false
+			for _, feedID := range config.FeedIDs {
+				if int64(article.FeedID) == feedID {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				continue
+			}
+		}
+
+		// 检查分类过滤
+		if len(config.CategoryIDs) > 0 {
+			// 需要关联 feeds 表
+			categories := s.getCategoriesFromIDs(config.CategoryIDs)
+			matched := false
+			if article.Feed != nil {
+				for _, category := range categories {
+					if article.Feed.Category == category {
+						matched = true
+						break
+					}
+				}
+			}
+			if !matched {
+				continue
+			}
+		}
+
+		// 发送单篇文章卡片
+		client := NewFeishuClient(config.WebhookURL)
+		feedName := ""
+		if article.Feed != nil {
+			feedName = article.Feed.Title
+		}
+		if err := client.SendArticleCard(article.Title, article.Link, article.Description, feedName); err != nil {
+			// 记录失败日志，但继续处理其他配置
+			s.LogPush(&models.PushLog{
+				UserID:       config.UserID,
+				PushConfigID: config.ID,
+				Status:       "failed",
+				ArticleCount: 1,
+				ErrorMessage: err.Error(),
+			})
+			continue
+		}
+
+		// 记录成功日志
+		s.LogPush(&models.PushLog{
+			UserID:       config.UserID,
+			PushConfigID: config.ID,
+			Status:       "success",
+			ArticleCount: 1,
+			Message:      fmt.Sprintf("Immediate push: %s", article.Title),
+		})
+	}
+
+	return nil
+}
+
 // processConfig 处理单个配置的推送
 func (s *PushService) processConfig(config *models.PushConfig) error {
-	// 构建查询条件
-	query := s.db.Where("user_id = ? AND is_read = false", config.UserID)
+	// 使用游标：查询 LastCursor 之后的新文章
+	cursor := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+	if config.LastCursor != nil {
+		cursor = *config.LastCursor
+	}
+
+	// 构建查询条件（使用游标过滤）
+	query := s.db.Where("user_id = ? AND is_read = false AND created_at >= ?", config.UserID, cursor)
 
 	// 应用订阅源过滤
 	if len(config.FeedIDs) > 0 {
@@ -317,9 +412,9 @@ func (s *PushService) processConfig(config *models.PushConfig) error {
 			Where("feeds.category IN ?", s.getCategoriesFromIDs(config.CategoryIDs))
 	}
 
-	// 检查最小未读数
+	// 检查新文章数量（游标之后）
 	var totalCount int64
-	countQuery := s.db.Model(&models.Article{}).Where("user_id = ? AND is_read = false", config.UserID)
+	countQuery := s.db.Model(&models.Article{}).Where("user_id = ? AND is_read = false AND created_at >= ?", config.UserID, cursor)
 	if len(config.FeedIDs) > 0 {
 		countQuery = countQuery.Where("feed_id IN ?", config.FeedIDs)
 	}
@@ -328,26 +423,35 @@ func (s *PushService) processConfig(config *models.PushConfig) error {
 			Where("feeds.category IN ?", s.getCategoriesFromIDs(config.CategoryIDs))
 	}
 	countQuery.Count(&totalCount)
-	log.Printf("[Push Debug] UserID=%d, ConfigID=%d, FeedIDs=%v, CategoryIDs=%v, UnreadCount=%d, MinRequired=%d",
+	log.Printf("[Push Debug] UserID=%d, ConfigID=%d, FeedIDs=%v, CategoryIDs=%v, NewArticles=%d, MinRequired=%d",
 		config.UserID, config.ID, config.FeedIDs, config.CategoryIDs, totalCount, config.MinUnreadCount)
 
 	if totalCount < int64(config.MinUnreadCount) {
-		return fmt.Errorf("not enough unread articles: %d (min: %d)", totalCount, config.MinUnreadCount)
+		return fmt.Errorf("not enough new articles since last push: %d (min: %d)", totalCount, config.MinUnreadCount)
 	}
 
-	// 查询文章
+	// 查询文章（使用游标）
 	var articles []models.Article
-	if err := query.Order("pub_date DESC").Limit(config.MaxArticleCount).Find(&articles).Error; err != nil {
+	if err := query.Order("created_at DESC").Limit(config.MaxArticleCount).Find(&articles).Error; err != nil {
 		return fmt.Errorf("query articles error: %w", err)
 	}
-	log.Printf("[Push Debug] Found %d articles for user %d", len(articles), config.UserID)
+	log.Printf("[Push Debug] Found %d new articles for user %d", len(articles), config.UserID)
 
-	// 发送推送
-	message := s.formatPushMessage(articles)
+	// 格式化为卡片数据
+	summaryArticles := s.formatPushMessageAsCards(articles)
+
+	// 发送卡片推送
 	client := NewFeishuClient(config.WebhookURL)
-	if err := client.SendTextMessage(message); err != nil {
+	if err := client.SendSummaryCard(summaryArticles); err != nil {
 		return err
 	}
+
+	// 更新游标和最后推送时间
+	now := time.Now()
+	s.db.Model(config).Updates(map[string]interface{}{
+		"last_cursor":  now,
+		"last_push_at": now,
+	})
 
 	// 记录成功日志
 	s.LogPush(&models.PushLog{
@@ -358,43 +462,34 @@ func (s *PushService) processConfig(config *models.PushConfig) error {
 		Message:      "Push sent successfully",
 	})
 
-	// 更新最后推送时间
-	s.db.Model(config).Update("last_push_at", time.Now())
-
 	return nil
 }
 
-// formatPushMessage 格式化推送消息
-func (s *PushService) formatPushMessage(articles []models.Article) string {
-	var builder strings.Builder
-	builder.WriteString("📰 每日文章汇总\n\n")
+// formatPushMessageAsCards 格式化推送消息为卡片数据
+func (s *PushService) formatPushMessageAsCards(articles []models.Article) []SummaryArticle {
+	summaryArticles := make([]SummaryArticle, len(articles))
 
 	for i, article := range articles {
-		builder.WriteString(fmt.Sprintf("%d. %s\n", i+1, article.Title))
-
-		if article.Feed != nil {
-			builder.WriteString(fmt.Sprintf("   来源：%s\n", article.Feed.Title))
-		}
-
+		pubDate := ""
 		if article.PubDate != nil {
-			builder.WriteString(fmt.Sprintf("   时间：%s\n", article.PubDate.Format("2006-01-02 15:04")))
+			pubDate = article.PubDate.Format("2006-01-02 15:04")
 		}
 
-		if article.Description != "" && len(article.Description) > 0 {
-			maxDescLen := 50
-			desc := article.Description
-			if len(desc) > maxDescLen {
-				desc = desc[:maxDescLen] + "..."
-			}
-			builder.WriteString(fmt.Sprintf("   描述：%s\n", desc))
+		feedName := ""
+		if article.Feed != nil {
+			feedName = article.Feed.Title
 		}
 
-		builder.WriteString(fmt.Sprintf("   链接：%s\n", article.Link))
-		builder.WriteString("\n")
+		summaryArticles[i] = SummaryArticle{
+			Title:       article.Title,
+			Link:        article.Link,
+			FeedName:    feedName,
+			PubDate:     pubDate,
+			Description: article.Description,
+		}
 	}
 
-	builder.WriteString(fmt.Sprintf("共 %d 篇文章", len(articles)))
-	return builder.String()
+	return summaryArticles
 }
 
 // getCategoriesFromIDs 从分类 ID 获取分类名称（待实现）

@@ -26,7 +26,10 @@ type Feed struct {
 
 type Article struct {
 	ID          uint       `gorm:"primarykey" json:"id"`
-	FeedID      uint       `json:"feed_id"`
+	CreatedAt   time.Time  `gorm:"index" json:"created_at"`
+	UpdatedAt   time.Time  `gorm:"index" json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	FeedID      uint       `gorm:"index;constraint:OnDelete:CASCADE" json:"feed_id"`
 	Title       string     `gorm:"index;not null" json:"title"`
 	Link        string     `json:"link"`
 	Description string     `json:"description"`
@@ -63,6 +66,7 @@ type PushConfig struct {
 	MaxArticleCount int        `gorm:"default:10" json:"max_article_count"`
 	FeedIDs        []int64    `gorm:"type:jsonb" json:"feed_ids,omitempty"`
 	CategoryIDs    []int64    `gorm:"type:jsonb" json:"category_ids,omitempty"`
+	LastCursor     *time.Time `gorm:"index" json:"last_cursor,omitempty"`  // 游标：上次推送的时间点
 	LastPushAt     *time.Time `json:"last_push_at,omitempty"`
 	CreatedAt      time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt      time.Time  `gorm:"autoUpdateTime" json:"updated_at"`

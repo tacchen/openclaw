@@ -12,16 +12,16 @@ import (
 )
 
 type RSSService struct {
-	feedRepo    *repository.FeedRepository
-	articleRepo *repository.ArticleRepository
-	feishuClient *FeishuClient
+	feedRepo     *repository.FeedRepository
+	articleRepo  *repository.ArticleRepository
+	PushService  *PushService
 }
 
-func NewRSSService(feedRepo *repository.FeedRepository, articleRepo *repository.ArticleRepository, feishuClient *FeishuClient) *RSSService {
+func NewRSSService(feedRepo *repository.FeedRepository, articleRepo *repository.ArticleRepository, pushService *PushService) *RSSService {
 	return &RSSService{
-		feedRepo:     feedRepo,
-		articleRepo:  articleRepo,
-		feishuClient: feishuClient,
+		feedRepo:    feedRepo,
+		articleRepo: articleRepo,
+		PushService: pushService,
 	}
 }
 
@@ -33,20 +33,21 @@ func (s *RSSService) FetchAllFeeds() {
 	}
 
 	for _, feed := range feeds {
-		s.FetchAndSaveArticles(&feed)
+		s.FetchAndSaveArticles(&feed, false)
 	}
 }
 
-func (s *RSSService) FetchAndSaveArticles(feed *models.Feed) error {
+// FetchAndSaveArticles 抓取并保存文章，skipPush 控制是否推送
+func (s *RSSService) FetchAndSaveArticles(feed *models.Feed, skipPush bool) error {
 	// Create custom HTTP client with User-Agent to avoid being blocked
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	
+
 	fp := gofeed.NewParser()
 	fp.Client = client
 	fp.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-	
+
 	parsedFeed, err := fp.ParseURLWithContext(feed.URL, context.Background())
 	if err != nil {
 		log.Printf("Error parsing feed %s: %v", feed.URL, err)
@@ -66,7 +67,10 @@ func (s *RSSService) FetchAndSaveArticles(feed *models.Feed) error {
 	feed.LastFetch = &now
 	s.feedRepo.Update(feed)
 
-	// Save articles
+	// Save articles and collect new ones for immediate push
+	var newArticles []models.Article
+	oneHourAgo := now.Add(-1 * time.Hour)
+
 	for _, item := range parsedFeed.Items {
 		// Skip if already exists
 		if s.articleRepo.ExistsByLink(feed.ID, item.Link) {
@@ -91,8 +95,31 @@ func (s *RSSService) FetchAndSaveArticles(feed *models.Feed) error {
 			continue
 		}
 
-		// 不再立即发送飞书通知
-		// 重要文章将通过 PushService 定时汇总推送
+		// 加入新文章列表
+		newArticles = append(newArticles, *article)
+	}
+
+	// 批量发送即时推送（仅推送最近1小时内的文章，避免历史文章刷屏）
+	if len(newArticles) > 0 && !skipPush && s.PushService != nil {
+		var recentArticles []models.Article
+		for _, article := range newArticles {
+			// 只推送最近1小时内的文章
+			if article.PubDate != nil && article.PubDate.After(oneHourAgo) {
+				recentArticles = append(recentArticles, article)
+			}
+		}
+
+		// 推送最近文章
+		if len(recentArticles) > 0 {
+			for i := range recentArticles {
+				if err := s.PushService.SendImmediatePush(&recentArticles[i]); err != nil {
+					log.Printf("Error sending immediate push: %v", err)
+				}
+			}
+			log.Printf("Pushed %d new articles (recent only) from feed %s", len(recentArticles), feed.Title)
+		} else {
+			log.Printf("Saved %d articles from feed %s (no recent articles to push)", len(newArticles), feed.Title)
+		}
 	}
 
 	return nil

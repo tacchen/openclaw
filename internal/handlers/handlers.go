@@ -155,7 +155,8 @@ func CreateFeed(feedRepo *repository.FeedRepository, rssService *services.RSSSer
 		}
 
 		// Fetch articles asynchronously (don't block the response)
-		go rssService.FetchAndSaveArticles(feed)
+		// Skip push to avoid flooding with historical articles
+		go rssService.FetchAndSaveArticles(feed, true)
 
 		c.JSON(http.StatusCreated, feed)
 	}

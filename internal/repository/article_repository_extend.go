@@ -33,6 +33,17 @@ func (r *ArticleRepository) GetNewArticlesSinceByUserID(userID uint, since time.
 	return articles, err
 }
 
+// GetArticlesCreatedAfter 获取指定 feed 在指定时间之后创建的文章（用于游标推送）
+func (r *ArticleRepository) GetArticlesCreatedAfter(feedID uint, since time.Time) ([]models.Article, error) {
+	var articles []models.Article
+	err := r.db.Where("feed_id = ?", feedID).
+		Where("created_at >= ?", since).
+		Preload("Feed").
+		Order("created_at DESC").
+		Find(&articles).Error
+	return articles, err
+}
+
 // GetUnreadCountByDate 获取指定日期的未读文章数
 func (r *ArticleRepository) GetUnreadCountByDate(date time.Time) (int64, error) {
 	start := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
@@ -48,7 +59,7 @@ func (r *ArticleRepository) GetUnreadCountByDate(date time.Time) (int64, error) 
 }
 
 // GetArticlesByScore 获取所有文章及其重要性分数（用于排序）
-// 注意：这个方法需要在应用层计算分数，这里只返回文章
+// 注意：这个方法需要在应用层计算分数，只是返回文章
 func (r *ArticleRepository) GetArticlesForImportance(since time.Time, limit int) ([]models.Article, error) {
 	var articles []models.Article
 	query := r.db.Where("created_at > ?", since).

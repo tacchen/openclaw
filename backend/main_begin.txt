@@ -1,0 +1,24 @@
+package main
+
+import (
+	"log"
+	"net/http"
+	"strings"
+	"time"
+
+	"rss-reader/internal/config"
+	"rss-reader/internal/handlers"
+	"rss-reader/internal/models"
+	"rss-reader/internal/repository"
+	"rss-reader/internal/schedulers"
+	"rss-reader/internal/services"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+)
+
+func main() {

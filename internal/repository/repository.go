@@ -83,12 +83,15 @@ func (r *FeedRepository) Update(feed *models.Feed) error {
 }
 
 func (r *FeedRepository) Delete(id uint) error {
-	// Delete related articles first
-	if err := r.db.Where("feed_id = ?", id).Delete(&models.Article{}).Error; err != nil {
-		return err
-	}
-	// Then delete the feed
-	return r.db.Delete(&models.Feed{}, id).Error
+	// Use transaction to ensure data consistency
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Delete related articles first
+		if err := tx.Where("feed_id = ?", id).Delete(&models.Article{}).Error; err != nil {
+			return err
+		}
+		// Then delete the feed
+		return tx.Delete(&models.Feed{}, id).Error
+	})
 }
 
 func (r *FeedRepository) FindAll() ([]models.Feed, error) {
