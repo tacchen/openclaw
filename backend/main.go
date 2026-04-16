@@ -39,10 +39,17 @@ func main() {
 	}
 	log.Printf("Database connected: %T, database=%v", database, database)
 
-	// AutoMigrate database schema - skip for now as tables already exist
-	log.Println("Skipping AutoMigrate - assuming tables already exist")
-	// Use models package to avoid unused import error
-	_ = &models.User{}
+	// AutoMigrate database schema
+	log.Println("Running AutoMigrate...")
+	if err := database.AutoMigrate(&models.User{}, &models.Feed{}, &models.Article{}, &models.Tag{}, &models.ArticleTag{}, &models.PushConfig{}, &models.PushLog{}); err != nil {
+		log.Printf("AutoMigrate error: %v", err)
+	} else {
+		log.Println("AutoMigrate completed successfully")
+	}
+
+	// Add last_cursor column to push_configs if not exists
+	database.Exec("ALTER TABLE push_configs ADD COLUMN IF NOT EXISTS last_cursor TIMESTAMP")
+	log.Println("Ensured last_cursor column exists in push_configs table")
 
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(database)
@@ -52,7 +59,7 @@ func main() {
 
 	// Initialize services
 	authService := services.NewAuthService(userRepo, cfg.JWTSecret)
-	
+
 	// Initialize Feishu client (optional)
 	var feishuClient *services.FeishuClient
 	if cfg.FeishuWebhookURL != "" {
@@ -61,11 +68,8 @@ func main() {
 	} else {
 		log.Println("Feishu webhook disabled (FEISHU_WEBHOOK_URL not set)")
 	}
-	
-	rssService := services.NewRSSService(feedRepo, articleRepo, feishuClient)
-	openaiService := services.NewOpenAIService()
 
-	// Initialize Push Service
+	// Initialize Push Service (needs feishuClient first)
 	var pushService *services.PushService
 	if feishuClient != nil {
 		pushService = services.NewPushService(database, feishuClient)
@@ -73,6 +77,9 @@ func main() {
 	} else {
 		log.Println("Warning: Feishu webhook not configured, push service disabled")
 	}
+
+	rssService := services.NewRSSService(feedRepo, articleRepo, pushService)
+	openaiService := services.NewOpenAIService()
 
 	if openaiService == nil {
 		log.Println("Warning: OPENAI_API_KEY not set, AI summary feature disabled")
@@ -84,7 +91,7 @@ func main() {
 		log.Println("Fetching RSS feeds...")
 		rssService.FetchAllFeeds()
 	})
-	
+
 	// Setup cron for daily summary
 	if pushService != nil {
 		c.AddFunc("0 9 * * *", func() {
@@ -104,7 +111,7 @@ func main() {
 		pushScheduler.Start()
 		defer pushScheduler.Stop()
 	}
-	
+
 	c.Start()
 
 	// Fetch feeds immediately on startup
